@@ -188,16 +188,51 @@ function Admin() {
     setIsEditProductOpen(true);
   };
 
-  const handleDeleteProduct = async (product: Product) => {
-    const confirmed = window.confirm(`Delete product "${product.name}"?`);
-    if (!confirmed) {
+  const handleEditProduct = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const parsedPrice = Number.parseFloat(newProductPrice);
+    const parsedStock = Number.parseInt(newProductStock, 10);
+
+    if (!editingProductId || !newProductName.trim() || Number.isNaN(parsedPrice) || Number.isNaN(parsedStock)) {
+      return;
+    }
+
+    const slug = newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    let existing: Product;
+    try {
+      existing = await apiFetch<Product>(`/api/products/${editingProductId}`);
+    } catch {
+      window.alert("Unable to load current product data");
       return;
     }
 
     const response = await fetch("/api/products", {
-      method: "DELETE",
+      method: "PUT",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ id: product.id }),
+      body: JSON.stringify({
+        id: editingProductId,
+        slug,
+        name: newProductName.trim(),
+        category: newProductCategory,
+        price: parsedPrice,
+        originalPrice: existing.originalPrice,
+        stock: parsedStock,
+        brand: existing.brand,
+        brandColor: existing.brandColor,
+        platform: existing.platform,
+        region: existing.region,
+        duration: existing.duration,
+        instant: existing.instant,
+        description: existing.description,
+        includes: existing.includes,
+        activation: existing.activation,
+        faqs: existing.faqs,
+        rating: existing.rating,
+        reviews: existing.reviews,
+        sold: existing.sold,
+      }),
     });
 
     if (!response.ok) {
@@ -262,61 +297,6 @@ function Admin() {
 
     resetProductForm();
     setIsAddProductOpen(false);
-  };
-
-  const handleEditProduct = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-
-    const parsedPrice = Number.parseFloat(newProductPrice);
-    const parsedStock = Number.parseInt(newProductStock, 10);
-
-    if (!editingProductId || !newProductName.trim() || Number.isNaN(parsedPrice) || Number.isNaN(parsedStock)) {
-      return;
-    }
-
-    const slug = newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
-
-    const response = await fetch("/api/products", {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        id: editingProductId,
-        slug,
-        name: newProductName.trim(),
-        category: newProductCategory,
-        price: parsedPrice,
-        originalPrice: parsedPrice,
-        stock: parsedStock,
-        // keep defaults to match current admin UI
-        brand: "Custom",
-        brandColor: "#6d5dfc",
-        platform: "Web",
-        region: "Global",
-        duration: "Instant",
-        instant: true,
-        description: "Updated from the admin dashboard.",
-        includes: ["Digital delivery"],
-        activation: ["Instant access"],
-        faqs: [],
-        rating: 5,
-        reviews: 0,
-        sold: 0,
-      }),
-    });
-
-    if (!response.ok) {
-      const body = await response.json().catch(() => ({}));
-      window.alert(body.error ?? "Unable to update product");
-      return;
-    }
-
-    setLocalProducts([]);
-    saveProductOverrides([]);
-    await queryClient.invalidateQueries({ queryKey: ["products"] });
-
-    resetProductForm();
-    setEditingProductId(null);
-    setIsEditProductOpen(false);
   };
 
   return (
