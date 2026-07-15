@@ -8,7 +8,10 @@ export async function handler(request: Request): Promise<Response> {
   const pathname = url.pathname;
 
   if (pathname === "/api/products") {
-    return handleProducts(url);
+    if (request.method === "GET") {
+      return handleProducts(url);
+    }
+    return handleProductMutations(request);
   }
   if (pathname.startsWith("/api/products/")) {
     return handleProductById(pathname.replace("/api/products/", ""));
@@ -78,6 +81,173 @@ async function handleProductById(id: string): Promise<Response> {
   } catch (error) {
     console.error("product detail endpoint failed", error);
     return new Response(JSON.stringify({ error: "Failed to load product" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
+}
+
+async function handleProductMutations(request: Request): Promise<Response> {
+  try {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    if (request.method === "POST") {
+      const name = String(body.name ?? "").trim();
+      const slug = String(body.slug ?? "").trim();
+      const category = String(body.category ?? "").trim();
+      const price = Number(body.price);
+      const originalPrice = Number(body.originalPrice);
+      const stock = Number(body.stock);
+
+      if (!name || !slug || !category || Number.isNaN(price) || Number.isNaN(originalPrice) || Number.isNaN(stock)) {
+        return new Response(JSON.stringify({ error: "Missing required fields" }), {
+          status: 400,
+          headers: jsonHeaders,
+        });
+      }
+
+      const [result] = await pool.query(
+        `INSERT INTO products (slug, name, brand, brandColor, category, platform, region, duration, price, originalPrice, rating, reviews, sold, stock, instant, description, includes, activation, faqs) 
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          slug,
+          name,
+          String(body.brand ?? "Custom"),
+          String(body.brandColor ?? "#6d5dfc"),
+          category,
+          String(body.platform ?? "Web"),
+          String(body.region ?? "Global"),
+          String(body.duration ?? "Instant"),
+          price,
+          originalPrice,
+          Number(body.rating ?? 5),
+          Number(body.reviews ?? 0),
+          Number(body.sold ?? 0),
+          stock,
+          toBoolean(body.instant ?? true) ? 1 : 0,
+          String(body.description ?? ""),
+          JSON.stringify(Array.isArray(body.includes) ? body.includes : []),
+          JSON.stringify(Array.isArray(body.activation) ? body.activation : []),
+          JSON.stringify(Array.isArray(body.faqs) ? body.faqs : []),
+        ]
+      );
+
+      const insertId = (result as { insertId: number }).insertId;
+      const [rows] = await pool.query("SELECT * FROM products WHERE id = ? LIMIT 1", [insertId]);
+      const row = Array.isArray(rows) ? rows[0] : null;
+
+      if (!row) {
+        return new Response(JSON.stringify({ error: "Failed to load created product" }), {
+          status: 500,
+          headers: jsonHeaders,
+        });
+      }
+
+      return new Response(JSON.stringify(castProduct(row as Record<string, unknown>)), {
+        status: 201,
+        headers: jsonHeaders,
+      });
+    }
+
+    if (request.method === "PUT") {
+      const id = String(body.id ?? "").trim();
+      const slug = String(body.slug ?? "").trim();
+
+      if (!id || !slug) {
+        return new Response(JSON.stringify({ error: "Missing required fields: id and slug" }), {
+          status: 400,
+          headers: jsonHeaders,
+        });
+      }
+
+      const name = String(body.name ?? "").trim();
+      const category = String(body.category ?? "").trim();
+      const price = Number(body.price);
+      const originalPrice = Number(body.originalPrice);
+      const stock = Number(body.stock);
+
+      if (!name || !category || Number.isNaN(price) || Number.isNaN(originalPrice) || Number.isNaN(stock)) {
+        return new Response(JSON.stringify({ error: "Missing required fields" }), {
+          status: 400,
+          headers: jsonHeaders,
+        });
+      }
+
+      await pool.query(
+        `UPDATE products SET slug = ?, name = ?, brand = ?, brandColor = ?, category = ?, platform = ?, region = ?, duration = ?, price = ?, originalPrice = ?, rating = ?, reviews = ?, sold = ?, stock = ?, instant = ?, description = ?, includes = ?, activation = ?, faqs = ? WHERE id = ?`,
+        [
+          slug,
+          name,
+          String(body.brand ?? "Custom"),
+          String(body.brandColor ?? "#6d5dfc"),
+          category,
+          String(body.platform ?? "Web"),
+          String(body.region ?? "Global"),
+          String(body.duration ?? "Instant"),
+          price,
+          originalPrice,
+          Number(body.rating ?? 5),
+          Number(body.reviews ?? 0),
+          Number(body.sold ?? 0),
+          stock,
+          toBoolean(body.instant ?? true) ? 1 : 0,
+          String(body.description ?? ""),
+          JSON.stringify(Array.isArray(body.includes) ? body.includes : []),
+          JSON.stringify(Array.isArray(body.activation) ? body.activation : []),
+          JSON.stringify(Array.isArray(body.faqs) ? body.faqs : []),
+          id,
+        ]
+      );
+
+      const [rows] = await pool.query("SELECT * FROM products WHERE id = ? LIMIT 1", [id]);
+      const row = Array.isArray(rows) ? rows[0] : null;
+
+      if (!row) {
+        return new Response(JSON.stringify({ error: "Product not found" }), {
+          status: 404,
+          headers: jsonHeaders,
+        });
+      }
+
+      return new Response(JSON.stringify(castProduct(row as Record<string, unknown>)), { headers: jsonHeaders });
+    }
+
+    if (request.method === "DELETE") {
+      const id = String(body.id ?? "").trim();
+
+      if (!id) {
+        return new Response(JSON.stringify({ error: "Missing required field: id" }), {
+          status: 400,
+          headers: jsonHeaders,
+        });
+      }
+
+      const [result] = await pool.query("DELETE FROM products WHERE id = ?", [id]);
+      const affectedRows = (result as { affectedRows: number }).affectedRows;
+
+      if (affectedRows === 0) {
+        return new Response(JSON.stringify({ error: "Product not found" }), {
+          status: 404,
+          headers: jsonHeaders,
+        });
+      }
+
+      return new Response(JSON.stringify({ ok: true }), { headers: jsonHeaders });
+    }
+
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: jsonHeaders,
+    });
+  } catch (error) {
+    console.error("product mutations endpoint failed", error);
+    return new Response(JSON.stringify({ error: "Failed to process product mutation" }), {
       status: 500,
       headers: jsonHeaders,
     });

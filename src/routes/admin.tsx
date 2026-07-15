@@ -188,6 +188,27 @@ function Admin() {
     setIsEditProductOpen(true);
   };
 
+  const handleDeleteProduct = async (product: Product) => {
+    const confirmed = window.confirm(`Delete product "${product.name}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch("/api/products", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: product.id }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to delete product");
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+  };
+
   const handleAddProduct = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -500,14 +521,14 @@ function Admin() {
                     <td>{p.stock}</td>
                     <td className="text-muted-foreground">{p.sold.toLocaleString()}</td>
                     <td>
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleOpenEditProduct(p)}
-                      >
-                        Edit
-                      </Button>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleOpenEditProduct(p)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteProduct(p)}>
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
