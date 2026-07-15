@@ -2,8 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, saveProductOverrides } from "@/lib/api";
-import type { Category, Product, UserRow } from "@/lib/types";
-import { DollarSign, ShoppingBag, Users, Package, TrendingUp } from "lucide-react";
+import type { Category, CategoryRow, Product, UserRow } from "@/lib/types";
+import { DollarSign, ShoppingBag, Users, Package, TrendingUp, Pencil, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -29,6 +29,13 @@ function Admin() {
   const [newProductPrice, setNewProductPrice] = useState("19.99");
   const [newProductStock, setNewProductStock] = useState("10");
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
+  const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+  const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
+  const [newCategoryName, setNewCategoryName] = useState("");
+  const [newCategoryDescription, setNewCategoryDescription] = useState("");
+  const [newCategoryIcon, setNewCategoryIcon] = useState("");
+  const [newCategoryGradient, setNewCategoryGradient] = useState("from-sky-500 to-indigo-700");
+  const [editingCategoryName, setEditingCategoryName] = useState<string | null>(null);
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["products"],
@@ -75,6 +82,103 @@ function Admin() {
     setNewProductStock("10");
   };
 
+  const resetCategoryForm = () => {
+    setNewCategoryName("");
+    setNewCategoryDescription("");
+    setNewCategoryIcon("");
+    setNewCategoryGradient("from-sky-500 to-indigo-700");
+    setEditingCategoryName(null);
+  };
+
+  const handleOpenEditCategory = (category: CategoryRow) => {
+    setEditingCategoryName(category.name);
+    setNewCategoryName(category.name);
+    setNewCategoryDescription(category.description);
+    setNewCategoryIcon(category.icon);
+    setNewCategoryGradient(category.gradient);
+    setIsEditCategoryOpen(true);
+  };
+
+  const handleAddCategory = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!newCategoryName.trim() || !newCategoryDescription.trim() || !newCategoryIcon.trim()) {
+      return;
+    }
+
+    const response = await fetch("/api/categories", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newCategoryName.trim(),
+        description: newCategoryDescription.trim(),
+        icon: newCategoryIcon.trim(),
+        gradient: newCategoryGradient,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to add category");
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["categories"] });
+    resetCategoryForm();
+    setIsAddCategoryOpen(false);
+  };
+
+  const handleEditCategory = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (!editingCategoryName || !newCategoryName.trim() || !newCategoryDescription.trim() || !newCategoryIcon.trim()) {
+      return;
+    }
+
+    const response = await fetch("/api/categories", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        oldName: editingCategoryName,
+        newName: newCategoryName.trim(),
+        description: newCategoryDescription.trim(),
+        icon: newCategoryIcon.trim(),
+        gradient: newCategoryGradient,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to update category");
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["categories"] });
+    resetCategoryForm();
+    setIsEditCategoryOpen(false);
+  };
+
+  const handleDeleteCategory = async (category: CategoryRow) => {
+    const confirmed = window.confirm(`Delete category "${category.name}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch("/api/categories", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name: category.name }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to delete category");
+      return;
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["categories"] });
+  };
+
   const handleOpenEditProduct = (product: Product) => {
     setEditingProductId(product.id);
     setNewProductName(product.name);
@@ -84,48 +188,62 @@ function Admin() {
     setIsEditProductOpen(true);
   };
 
-  const handleAddProduct = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleAddProduct = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const parsedPrice = Number.parseFloat(newProductPrice);
     const parsedStock = Number.parseInt(newProductStock, 10);
 
+
     if (!newProductName.trim() || Number.isNaN(parsedPrice) || Number.isNaN(parsedStock)) {
       return;
     }
 
-    const newProduct: Product = {
-      id: `local-${Date.now()}`,
-      slug: newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
-      name: newProductName.trim(),
-      brand: "Custom",
-      brandColor: "#6d5dfc",
-      category: newProductCategory,
-      platform: "Web",
-      region: "Global",
-      duration: "Instant",
-      price: parsedPrice,
-      originalPrice: parsedPrice,
-      rating: 5,
-      reviews: 0,
-      sold: 0,
-      stock: parsedStock,
-      instant: true,
-      description: "New product added from the admin dashboard.",
-      includes: ["Digital delivery"],
-      activation: ["Instant access"],
-      faqs: [],
-    };
+    const slug = newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
-    const nextProducts = [newProduct, ...localProducts];
-    setLocalProducts(nextProducts);
-    saveProductOverrides([...nextProducts, ...products]);
-    queryClient.setQueryData<Product[]>(["products"], [...nextProducts, ...products]);
+    const response = await fetch("/api/products", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: newProductName.trim(),
+        slug,
+        category: newProductCategory,
+        price: parsedPrice,
+        originalPrice: parsedPrice,
+        stock: parsedStock,
+        // optional fields with defaults (server will also default these)
+        brand: "Custom",
+        brandColor: "#6d5dfc",
+        platform: "Web",
+        region: "Global",
+        duration: "Instant",
+        instant: true,
+        description: "New product added from the admin dashboard.",
+        includes: ["Digital delivery"],
+        activation: ["Instant access"],
+        faqs: [],
+        rating: 5,
+        reviews: 0,
+        sold: 0,
+      }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to add product");
+      return;
+    }
+
+    // clear local overrides and refresh from MySQL
+    setLocalProducts([]);
+    saveProductOverrides([]);
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+
     resetProductForm();
     setIsAddProductOpen(false);
   };
 
-  const handleEditProduct = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleEditProduct = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     const parsedPrice = Number.parseFloat(newProductPrice);
@@ -135,52 +253,46 @@ function Admin() {
       return;
     }
 
-    const productToUpdate = products.find((product) => product.id === editingProductId) ?? visibleProducts.find((product) => product.id === editingProductId);
-    const updatedProduct: Product = {
-      ...(productToUpdate ?? {
+    const slug = newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+
+    const response = await fetch("/api/products", {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
         id: editingProductId,
-        slug: newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
+        slug,
         name: newProductName.trim(),
+        category: newProductCategory,
+        price: parsedPrice,
+        originalPrice: parsedPrice,
+        stock: parsedStock,
+        // keep defaults to match current admin UI
         brand: "Custom",
         brandColor: "#6d5dfc",
-        category: newProductCategory,
         platform: "Web",
         region: "Global",
         duration: "Instant",
-        price: parsedPrice,
-        originalPrice: parsedPrice,
-        rating: 5,
-        reviews: 0,
-        sold: 0,
-        stock: parsedStock,
         instant: true,
         description: "Updated from the admin dashboard.",
         includes: ["Digital delivery"],
         activation: ["Instant access"],
         faqs: [],
+        rating: 5,
+        reviews: 0,
+        sold: 0,
       }),
-      id: editingProductId,
-      slug: newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, ""),
-      name: newProductName.trim(),
-      category: newProductCategory,
-      price: parsedPrice,
-      originalPrice: parsedPrice,
-      stock: parsedStock,
-    };
+    });
 
-    const nextLocalProducts = [...localProducts];
-    const localIndex = nextLocalProducts.findIndex((product) => product.id === editingProductId);
-
-    if (localIndex >= 0) {
-      nextLocalProducts[localIndex] = updatedProduct;
-    } else {
-      nextLocalProducts.unshift(updatedProduct);
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to update product");
+      return;
     }
 
-    setLocalProducts(nextLocalProducts);
-    const nextQueryProducts = [...nextLocalProducts, ...products.filter((product) => !nextLocalProducts.some((localProduct) => localProduct.id === product.id))];
-    saveProductOverrides(nextQueryProducts);
-    queryClient.setQueryData<Product[]>(["products"], nextQueryProducts);
+    setLocalProducts([]);
+    saveProductOverrides([]);
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+
     resetProductForm();
     setEditingProductId(null);
     setIsEditProductOpen(false);
@@ -451,7 +563,73 @@ function Admin() {
         <div className="mt-8 rounded-2xl glass p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Categories ({categoriesRows.length})</h2>
-            <button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">+ Add category</button>
+            <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
+              <DialogTrigger asChild>
+                <Button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">+ Add category</Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add category</DialogTitle>
+                  <DialogDescription>Create a new category for the storefront.</DialogDescription>
+                </DialogHeader>
+                <form className="space-y-4" onSubmit={handleAddCategory}>
+                  <div className="space-y-2">
+                    <Label htmlFor="category-name">Category name</Label>
+                    <Input id="category-name" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Enter category name" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="category-description">Description</Label>
+                    <Input id="category-description" value={newCategoryDescription} onChange={(event) => setNewCategoryDescription(event.target.value)} placeholder="Enter description" required />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="category-icon">Icon</Label>
+                      <Input id="category-icon" value={newCategoryIcon} onChange={(event) => setNewCategoryIcon(event.target.value)} placeholder="Icon name" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="category-gradient">Gradient</Label>
+                      <Input id="category-gradient" value={newCategoryGradient} onChange={(event) => setNewCategoryGradient(event.target.value)} placeholder="e.g. from-sky-500 to-indigo-700" required />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => { resetCategoryForm(); setIsAddCategoryOpen(false); }}>Cancel</Button>
+                    <Button type="submit">Save category</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
+            <Dialog open={isEditCategoryOpen} onOpenChange={setIsEditCategoryOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Edit category</DialogTitle>
+                  <DialogDescription>Update the selected category details.</DialogDescription>
+                </DialogHeader>
+                <form className="space-y-4" onSubmit={handleEditCategory}>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category-name">Category name</Label>
+                    <Input id="edit-category-name" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Enter category name" required />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-category-description">Description</Label>
+                    <Input id="edit-category-description" value={newCategoryDescription} onChange={(event) => setNewCategoryDescription(event.target.value)} placeholder="Enter description" required />
+                  </div>
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-category-icon">Icon</Label>
+                      <Input id="edit-category-icon" value={newCategoryIcon} onChange={(event) => setNewCategoryIcon(event.target.value)} placeholder="Icon name" required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-category-gradient">Gradient</Label>
+                      <Input id="edit-category-gradient" value={newCategoryGradient} onChange={(event) => setNewCategoryGradient(event.target.value)} placeholder="e.g. from-sky-500 to-indigo-700" required />
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => { resetCategoryForm(); setIsEditCategoryOpen(false); }}>Cancel</Button>
+                    <Button type="submit">Update category</Button>
+                  </DialogFooter>
+                </form>
+              </DialogContent>
+            </Dialog>
           </div>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -461,6 +639,7 @@ function Admin() {
                   <th>Description</th>
                   <th>Icon</th>
                   <th>Gradient</th>
+                  <th className="text-right">Actions</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
@@ -470,6 +649,16 @@ function Admin() {
                     <td className="text-muted-foreground">{category.description}</td>
                     <td>{category.icon}</td>
                     <td className="text-muted-foreground">{category.gradient}</td>
+                    <td>
+                      <div className="flex justify-end gap-2">
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleOpenEditCategory(category)}>
+                          <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
+                        </Button>
+                        <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteCategory(category)}>
+                          <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
+                        </Button>
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
