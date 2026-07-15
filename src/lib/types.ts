@@ -48,3 +48,13 @@ export interface Review {
   rating: number;
   text: string;
 }
+
+export interface UserRow {
+  id: string | number;
+  name: string;
+  email: string;
+  plan: string;
+  orders: number;
+  status: string;
+  joined: string;
+}

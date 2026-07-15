@@ -50,6 +50,18 @@ CREATE TABLE `reviews` (
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `users` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `name` VARCHAR(120) NOT NULL,
+  `email` VARCHAR(150) NOT NULL,
+  `plan` VARCHAR(30) NOT NULL DEFAULT 'Starter',
+  `orders` INT NOT NULL DEFAULT 0,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'Active',
+  `joined_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uq_users_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO `categories` (`name`, `description`, `icon`, `gradient`) VALUES
 ('Streaming', 'Netflix, Disney+, Max & more', 'Play', 'from-rose-500 to-pink-700'),
 ('Gaming', 'Xbox, PlayStation, Nintendo', 'Gamepad2', 'from-emerald-500 to-teal-700'),
@@ -86,6 +98,13 @@ INSERT INTO `products` (
 ('adobe-cc', 'adobe-cc', 'Adobe Creative Cloud — 1 Month', 'Adobe', 'from-rose-600 to-red-900', 'Productivity', 'Multi-platform', 'Global', '1 Month', 44.99, 59.99, 4.7, 1240, 12800, 250, 1, 0, 0, 0, 0, NULL, 'Activate instantly and enjoy premium access. Digital code delivered to your inbox within seconds of purchase. Backed by our 24/7 support and buyer protection.', '["1 digital activation code","Step-by-step redemption guide","Instant email delivery","24/7 customer support"]', '["Open your provider account or create one","Navigate to Redeem Code / Gift Card","Enter the code we send to your inbox","Enjoy your subscription immediately"]', '[{"q":"How fast is delivery?","a":"Codes are delivered automatically within 30 seconds after payment."},{"q":"Is this region locked?","a":"Please check the region badge on the product. Most codes are global."},{"q":"Can I get a refund?","a":"Unused codes are eligible for refund within 24 hours of purchase."}]'),
 ('canva-pro', 'canva-pro', 'Canva Pro — 12 Months', 'Canva', 'from-cyan-400 to-sky-700', 'Productivity', 'Multi-platform', 'Global', '12 Months', 39.99, 119.99, 4.7, 1240, 12800, 250, 1, 1, 1, 0, 1, 1719475616920, 'Activate instantly and enjoy premium access. Digital code delivered to your inbox within seconds of purchase. Backed by our 24/7 support and buyer protection.', '["1 digital activation code","Step-by-step redemption guide","Instant email delivery","24/7 customer support"]', '["Open your provider account or create one","Navigate to Redeem Code / Gift Card","Enter the code we send to your inbox","Enjoy your subscription immediately"]', '[{"q":"How fast is delivery?","a":"Codes are delivered automatically within 30 seconds after payment."},{"q":"Is this region locked?","a":"Please check the region badge on the product. Most codes are global."},{"q":"Can I get a refund?","a":"Unused codes are eligible for refund within 24 hours of purchase."}]'),
 ('grammarly-premium', 'grammarly-premium', 'Grammarly Premium — 12 Months', 'Grammarly', 'from-emerald-400 to-green-800', 'Productivity', 'Multi-platform', 'Global', '12 Months', 59.99, 144.00, 4.7, 1240, 12800, 250, 1, 0, 0, 0, 0, NULL, 'Activate instantly and enjoy premium access. Digital code delivered to your inbox within seconds of purchase. Backed by our 24/7 support and buyer protection.', '["1 digital activation code","Step-by-step redemption guide","Instant email delivery","24/7 customer support"]', '["Open your provider account or create one","Navigate to Redeem Code / Gift Card","Enter the code we send to your inbox","Enjoy your subscription immediately"]', '[{"q":"How fast is delivery?","a":"Codes are delivered automatically within 30 seconds after payment."},{"q":"Is this region locked?","a":"Please check the region badge on the product. Most codes are global."},{"q":"Can I get a refund?","a":"Unused codes are eligible for refund within 24 hours of purchase."}]');
+
+INSERT INTO `users` (`name`, `email`, `plan`, `orders`, `status`, `joined_at`) VALUES
+('Ava Carter', 'ava.carter@example.com', 'Premium', 13, 'Active', '2025-01-08 00:00:00'),
+('Liam Patel', 'liam.patel@example.com', 'Standard', 5, 'Active', '2025-02-12 00:00:00'),
+('Sophia Nguyen', 'sophia.nguyen@example.com', 'Premium', 27, 'VIP', '2024-11-03 00:00:00'),
+('Noah Williams', 'noah.williams@example.com', 'Starter', 2, 'Inactive', '2026-03-15 00:00:00'),
+('Emma Johnson', 'emma.johnson@example.com', 'Premium', 18, 'Active', '2025-04-22 00:00:00');
 
 INSERT INTO `reviews` (`name`, `country`, `rating`, `text`) VALUES
 ('Alex M.', '🇺🇸', 5, 'Code arrived in 20 seconds. Cheaper than the official site and worked flawlessly on my Xbox.'),

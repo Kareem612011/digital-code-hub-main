@@ -1,4 +1,5 @@
 import { products, categories, reviews } from "./lib/data";
+import pool from "./lib/mysql";
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 
@@ -28,7 +29,26 @@ export async function handler(request: Request): Promise<Response> {
     const rows = reviews.map((r, i) => ({ id: i + 1, ...r }));
     return new Response(JSON.stringify(rows), { headers: jsonHeaders });
   }
+  if (pathname === "/api/users") {
+    return handleUsers();
+  }
   return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: jsonHeaders });
+}
+
+async function handleUsers(): Promise<Response> {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, name, email, plan, orders, status, DATE_FORMAT(joined_at, "%Y-%m-%d") AS joined FROM users ORDER BY id ASC`,
+    );
+
+    return new Response(JSON.stringify(rows), { headers: jsonHeaders });
+  } catch (error) {
+    console.error("users endpoint failed", error);
+    return new Response(JSON.stringify({ error: "Failed to load users" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
 }
 
 function handleProducts(url: URL): Response {
