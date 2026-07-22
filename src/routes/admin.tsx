@@ -3,7 +3,7 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, saveProductOverrides } from "@/lib/api";
 import type { Category, CategoryRow, Product, UserRow } from "@/lib/types";
-import { DollarSign, ShoppingBag, Users, Package, TrendingUp, Pencil, Trash2 } from "lucide-react";
+import { DollarSign, ShoppingBag, Users, Package, TrendingUp, Pencil, Trash2, ShieldCheck, Lock, Mail, Eye, EyeOff, LogOut, KeyRound, AlertCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -18,8 +18,19 @@ const tabs = ["Overview", "Products", "Categories", "Coupons", "Orders", "Users"
 
 const chart = [30, 45, 42, 60, 58, 72, 68, 84, 79, 92, 88, 100];
 
+const ADMIN_AUTH_KEY = "substore-admin-session";
+
 function Admin() {
   const queryClient = useQueryClient();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    return window.localStorage.getItem(ADMIN_AUTH_KEY) === "true";
+  });
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState("");
+
   const [tab, setTab] = useState("Overview");
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [isEditProductOpen, setIsEditProductOpen] = useState(false);
@@ -28,6 +39,7 @@ function Admin() {
   const [newProductCategory, setNewProductCategory] = useState<Category>("Streaming");
   const [newProductPrice, setNewProductPrice] = useState("19.99");
   const [newProductStock, setNewProductStock] = useState("10");
+  const [newProductBrandColor, setNewProductBrandColor] = useState("#6d5dfc");
   const [localProducts, setLocalProducts] = useState<Product[]>([]);
   const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
   const [isEditCategoryOpen, setIsEditCategoryOpen] = useState(false);
@@ -80,6 +92,7 @@ function Admin() {
     setNewProductCategory("Streaming");
     setNewProductPrice("19.99");
     setNewProductStock("10");
+    setNewProductBrandColor("#6d5dfc");
   };
 
   const resetCategoryForm = () => {
@@ -185,6 +198,7 @@ function Admin() {
     setNewProductCategory(product.category);
     setNewProductPrice(String(product.price));
     setNewProductStock(String(product.stock));
+    setNewProductBrandColor(product.brandColor || "#6d5dfc");
     setIsEditProductOpen(true);
   };
 
@@ -220,7 +234,7 @@ function Admin() {
         originalPrice: existing.originalPrice,
         stock: parsedStock,
         brand: existing.brand,
-        brandColor: existing.brandColor,
+        brandColor: newProductBrandColor,
         platform: existing.platform,
         region: existing.region,
         duration: existing.duration,
@@ -233,6 +247,36 @@ function Admin() {
         reviews: existing.reviews,
         sold: existing.sold,
       }),
+    });
+
+    if (!response.ok) {
+      const body = await response.json().catch(() => ({}));
+      window.alert(body.error ?? "Unable to update product");
+      return;
+    }
+
+    const updatedProduct = (await response.json().catch(() => null)) as Product | null;
+    if (updatedProduct) {
+      queryClient.setQueryData<Product[]>(["products"], (old = []) =>
+        old.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+      );
+    }
+
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+    resetProductForm();
+    setIsEditProductOpen(false);
+  };
+
+  const handleDeleteProduct = async (product: Product) => {
+    const confirmed = window.confirm(`Delete product "${product.name}"?`);
+    if (!confirmed) {
+      return;
+    }
+
+    const response = await fetch("/api/products", {
+      method: "DELETE",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ id: product.id }),
     });
 
     if (!response.ok) {
@@ -269,7 +313,7 @@ function Admin() {
         stock: parsedStock,
         // optional fields with defaults (server will also default these)
         brand: "Custom",
-        brandColor: "#6d5dfc",
+        brandColor: newProductBrandColor,
         platform: "Web",
         region: "Global",
         duration: "Instant",
@@ -299,25 +343,165 @@ function Admin() {
     setIsAddProductOpen(false);
   };
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setAuthError("");
+
+    const cleanEmail = email.trim().toLowerCase();
+    if (cleanEmail === "admin@substore.com" && password === "admin123") {
+      window.localStorage.setItem(ADMIN_AUTH_KEY, "true");
+      setIsAuthenticated(true);
+    } else {
+      setAuthError("Invalid admin credentials. Please use admin@substore.com / admin123");
+    }
+  };
+
+  const handleLogout = () => {
+    window.localStorage.removeItem(ADMIN_AUTH_KEY);
+    setIsAuthenticated(false);
+    setEmail("");
+    setPassword("");
+    setAuthError("");
+  };
+
+  const fillDemoCredentials = () => {
+    setEmail("admin@substore.com");
+    setPassword("admin123");
+    setAuthError("");
+  };
+
+  if (!isAuthenticated) {
+    return (
+      <div className="mx-auto flex min-h-[calc(100vh-6rem)] max-w-md flex-col justify-center px-4 py-12 sm:px-6">
+        <div className="relative overflow-hidden rounded-3xl glass-strong p-8 shadow-2xl border border-white/10">
+          <div className="absolute -right-16 -top-16 h-40 w-40 rounded-full bg-brand-accent/20 blur-3xl pointer-events-none" />
+          <div className="absolute -left-16 -bottom-16 h-40 w-40 rounded-full bg-brand/20 blur-3xl pointer-events-none" />
+
+          <div className="relative text-center">
+            <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl gradient-brand shadow-lg shadow-brand/30">
+              <ShieldCheck className="h-7 w-7 text-white" />
+            </div>
+            <h1 className="mt-4 text-2xl font-black tracking-tight">Admin Portal</h1>
+            <p className="mt-1.5 text-xs text-muted-foreground">Sign in to manage catalog, orders, and users</p>
+          </div>
+
+          <div className="mt-6 rounded-2xl border border-brand/20 bg-brand/10 p-4 text-xs">
+            <div className="flex items-center justify-between font-semibold text-brand-accent">
+              <span className="flex items-center gap-1.5">
+                <KeyRound className="h-4 w-4" /> Demo Credentials
+              </span>
+              <button
+                type="button"
+                onClick={fillDemoCredentials}
+                className="underline hover:text-white transition-colors cursor-pointer"
+              >
+                Auto-fill
+              </button>
+            </div>
+            <div className="mt-2 space-y-1 text-muted-foreground font-mono text-[11px]">
+              <div>Email: <span className="text-foreground">admin@substore.com</span></div>
+              <div>Password: <span className="text-foreground">admin123</span></div>
+            </div>
+          </div>
+
+          <form onSubmit={handleLogin} className="mt-6 space-y-4">
+            {authError && (
+              <div className="flex items-center gap-2 rounded-xl border border-rose-500/30 bg-rose-500/10 p-3 text-xs text-rose-300">
+                <AlertCircle className="h-4 w-4 shrink-0" />
+                <span>{authError}</span>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-email">Admin Email</Label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="admin-email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="admin@substore.com"
+                  className="pl-9"
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="admin-password">Password</Label>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  id="admin-password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="pl-9 pr-10"
+                  required
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                  aria-label="Toggle password visibility"
+                >
+                  {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+
+            <Button type="submit" className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white shadow-lg cursor-pointer">
+              Sign In to Dashboard
+            </Button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">Admin</div>
-          <h1 className="mt-1 text-4xl font-black">Dashboard</h1>
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 pb-6 mb-8">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl gradient-brand text-sm font-black text-white shadow-md">
+            SA
+          </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black">Admin Dashboard</h1>
+              <span className="inline-flex items-center gap-1 rounded-full bg-brand-accent/15 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-brand-accent border border-brand-accent/30">
+                <ShieldCheck className="h-3 w-3" /> Super Admin
+              </span>
+            </div>
+            <p className="text-xs text-muted-foreground">Logged in as admin@substore.com</p>
+          </div>
         </div>
-        <div className="flex flex-wrap gap-1.5">
-          {tabs.map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              className={`rounded-full px-3 py-1.5 text-xs font-medium transition ${
-                tab === t ? "gradient-brand text-white shadow-lg" : "border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
-              }`}
-            >
-              {t}
-            </button>
-          ))}
+
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="flex flex-wrap gap-1.5">
+            {tabs.map((t) => (
+              <button
+                key={t}
+                onClick={() => setTab(t)}
+                className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition cursor-pointer ${
+                  tab === t ? "gradient-brand text-white shadow-lg" : "border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                {t}
+              </button>
+            ))}
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="rounded-xl border-white/10 text-muted-foreground hover:bg-rose-500/10 hover:text-rose-400 hover:border-rose-500/30 cursor-pointer"
+          >
+            <LogOut className="mr-1.5 h-3.5 w-3.5" /> Sign Out
+          </Button>
         </div>
       </div>
 
@@ -418,9 +602,31 @@ function Admin() {
                       <Input id="product-price" type="number" min="0" step="0.01" value={newProductPrice} onChange={(event) => setNewProductPrice(event.target.value)} required />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="product-stock">Stock</Label>
-                    <Input id="product-stock" type="number" min="0" value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} required />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="product-stock">Stock</Label>
+                      <Input id="product-stock" type="number" min="0" value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="product-color">Brand / Accent Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="product-color-picker"
+                          type="color"
+                          value={newProductBrandColor}
+                          onChange={(event) => setNewProductBrandColor(event.target.value)}
+                          className="h-9 w-12 cursor-pointer p-1"
+                        />
+                        <Input
+                          id="product-color"
+                          type="text"
+                          value={newProductBrandColor}
+                          onChange={(event) => setNewProductBrandColor(event.target.value)}
+                          placeholder="#6d5dfc"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsAddProductOpen(false)}>Cancel</Button>
@@ -468,9 +674,31 @@ function Admin() {
                       <Input id="edit-product-price" type="number" min="0" step="0.01" value={newProductPrice} onChange={(event) => setNewProductPrice(event.target.value)} required />
                     </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="edit-product-stock">Stock</Label>
-                    <Input id="edit-product-stock" type="number" min="0" value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} required />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-product-stock">Stock</Label>
+                      <Input id="edit-product-stock" type="number" min="0" value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} required />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-product-color">Brand / Accent Color</Label>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          id="edit-product-color-picker"
+                          type="color"
+                          value={newProductBrandColor}
+                          onChange={(event) => setNewProductBrandColor(event.target.value)}
+                          className="h-9 w-12 cursor-pointer p-1"
+                        />
+                        <Input
+                          id="edit-product-color"
+                          type="text"
+                          value={newProductBrandColor}
+                          onChange={(event) => setNewProductBrandColor(event.target.value)}
+                          placeholder="#6d5dfc"
+                          className="flex-1"
+                        />
+                      </div>
+                    </div>
                   </div>
                   <DialogFooter>
                     <Button type="button" variant="outline" onClick={() => setIsEditProductOpen(false)}>Cancel</Button>
@@ -495,7 +723,12 @@ function Admin() {
               <tbody className="divide-y divide-white/5">
                 {visibleProducts.map((p) => (
                   <tr key={p.id}>
-                    <td className="py-3 font-medium">{p.name}</td>
+                    <td className="py-3 font-medium">
+                      <div className="flex items-center gap-2">
+                        <span className="h-3 w-3 rounded-full shrink-0 shadow-sm border border-white/20" style={{ backgroundColor: p.brandColor || "#6d5dfc" }} />
+                        <span>{p.name}</span>
+                      </div>
+                    </td>
                     <td className="text-muted-foreground">{p.category}</td>
                     <td>${p.price.toFixed(2)}</td>
                     <td>{p.stock}</td>

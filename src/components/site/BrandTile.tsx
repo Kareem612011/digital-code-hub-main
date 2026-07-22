@@ -15,9 +15,29 @@ const sizes = {
 
 export function BrandTile({ brand, gradient, className = "", size = "md", subtitle }: BrandTileProps) {
   const letter = brand.replace(/[^A-Za-z0-9+]/g, "").slice(0, 1).toUpperCase() || "•";
+  const color = gradient || "#6d5dfc";
+
+  const isHexOrCssColor =
+    color.startsWith("#") ||
+    color.startsWith("rgb") ||
+    color.startsWith("hsl") ||
+    color.includes("gradient");
+
+  const style = isHexOrCssColor
+    ? {
+        background:
+          color.startsWith("#") || color.startsWith("rgb") || color.startsWith("hsl")
+            ? `linear-gradient(135deg, ${color}, #0f172a)`
+            : color,
+      }
+    : undefined;
+
+  const bgClass = isHexOrCssColor ? "" : `bg-gradient-to-br ${color}`;
+
   return (
     <div
-      className={`relative overflow-hidden rounded-2xl bg-gradient-to-br ${gradient} ${className}`}
+      style={style}
+      className={`relative overflow-hidden rounded-2xl ${bgClass} ${className}`}
     >
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.35),transparent_60%)]" />
       <div className="absolute -right-8 -top-8 h-32 w-32 rounded-full bg-white/10 blur-2xl" />

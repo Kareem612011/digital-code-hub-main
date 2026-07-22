@@ -38,7 +38,7 @@ function loadCategories() {
 function Shop() {
   const search = Route.useSearch();
   const navigate = Route.useNavigate();
-  const cat = (search.category as Category) || "All";
+  const cat = (search.category as Category | "All") || "All";
 
   const setCat = (newCat: Category | "All") => {
     navigate({
