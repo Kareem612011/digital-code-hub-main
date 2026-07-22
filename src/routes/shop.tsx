@@ -6,6 +6,10 @@ import { apiFetch } from "@/lib/api";
 import type { Category, CategoryRow, Product } from "@/lib/types";
 import { SlidersHorizontal, X } from "lucide-react";
 
+type ShopSearch = {
+  category?: string;
+};
+
 export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
@@ -13,6 +17,11 @@ export const Route = createFileRoute("/shop")({
       { name: "description", content: "Browse premium subscription codes with filters for platform, region, duration and price." },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): ShopSearch => {
+    return {
+      category: typeof search.category === "string" ? search.category : undefined,
+    };
+  },
   component: Shop,
 });
 
@@ -27,7 +36,19 @@ function loadCategories() {
 }
 
 function Shop() {
-  const [cat, setCat] = useState<Category | "All">("All");
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  const cat = (search.category as Category) || "All";
+
+  const setCat = (newCat: Category | "All") => {
+    navigate({
+      search: (prev) => ({
+        ...prev,
+        category: newCat === "All" ? undefined : newCat,
+      }),
+      replace: true,
+    });
+  };
   const [platform, setPlatform] = useState<string>("All");
   const [region, setRegion] = useState<string>("All");
   const [duration, setDuration] = useState<string>("All");

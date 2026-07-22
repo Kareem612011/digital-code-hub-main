@@ -493,7 +493,7 @@ function Admin() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-white/5">
-                {visibleProducts.slice(0, 10).map((p) => (
+                {visibleProducts.map((p) => (
                   <tr key={p.id}>
                     <td className="py-3 font-medium">{p.name}</td>
                     <td className="text-muted-foreground">{p.category}</td>
