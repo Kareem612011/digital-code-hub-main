@@ -22,13 +22,17 @@ export function Header() {
 
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["products"],
-    queryFn: () => apiFetch<Product[]>('/api/products'),
+    queryFn: () => apiFetch<Product[]>("/api/products"),
   });
 
   const suggestions =
     q.length > 1
       ? products
-          .filter((p) => p.name.toLowerCase().includes(q.toLowerCase()) || p.brand.toLowerCase().includes(q.toLowerCase()))
+          .filter(
+            (p) =>
+              p.name.toLowerCase().includes(q.toLowerCase()) ||
+              p.brand.toLowerCase().includes(q.toLowerCase()),
+          )
           .slice(0, 6)
       : [];
 
@@ -37,7 +41,9 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center gap-4 px-4 sm:px-6 lg:px-8">
         <Link to="/" className="flex shrink-0 items-center gap-2">
           <div className="relative h-8 w-8 rounded-lg gradient-brand">
-            <div className="absolute inset-0 flex items-center justify-center text-sm font-black text-white">S</div>
+            <div className="absolute inset-0 flex items-center justify-center text-sm font-black text-white">
+              S
+            </div>
           </div>
           <span className="text-lg font-black tracking-tight">
             Sub<span className="text-gradient">Store</span>
@@ -89,13 +95,24 @@ export function Header() {
         </div>
 
         <div className="ml-auto flex items-center gap-1">
-          <button className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:inline-flex" aria-label="Language">
+          <button
+            className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:inline-flex"
+            aria-label="Language"
+          >
             <Globe className="h-4 w-4" />
           </button>
-          <Link to="/account" className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:inline-flex" aria-label="Account">
+          <Link
+            to="/account"
+            className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:inline-flex"
+            aria-label="Account"
+          >
             <User className="h-4 w-4" />
           </Link>
-          <Link to="/account" className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:inline-flex" aria-label="Wishlist">
+          <Link
+            to="/account"
+            className="hidden rounded-lg p-2 text-muted-foreground transition hover:bg-white/5 hover:text-foreground md:inline-flex"
+            aria-label="Wishlist"
+          >
             <Heart className="h-4 w-4" />
           </Link>
           <Link
@@ -110,7 +127,11 @@ export function Header() {
               </span>
             )}
           </Link>
-          <button onClick={() => setOpen((o) => !o)} className="rounded-lg p-2 md:hidden" aria-label="Menu">
+          <button
+            onClick={() => setOpen((o) => !o)}
+            className="rounded-lg p-2 md:hidden"
+            aria-label="Menu"
+          >
             {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
           </button>
         </div>

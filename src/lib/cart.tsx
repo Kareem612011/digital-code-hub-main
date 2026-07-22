@@ -35,7 +35,9 @@ function useHydratedState<T>(key: string, initial: T): [T, (v: T | ((p: T) => T)
   }, [key]);
   useEffect(() => {
     if (!hydrated) return;
-    try { localStorage.setItem(key, JSON.stringify(state)); } catch {}
+    try {
+      localStorage.setItem(key, JSON.stringify(state));
+    } catch {}
   }, [key, state, hydrated]);
   return [state, setState];
 }
@@ -45,7 +47,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   const [wishlist, setWishlist] = useHydratedState<string[]>("substore.wish", []);
   const { data: products = [] } = useQuery<Product[]>({
     queryKey: ["products"],
-    queryFn: () => apiFetch<Product[]>('/api/products'),
+    queryFn: () => apiFetch<Product[]>("/api/products"),
     staleTime: 1000 * 60 * 5,
   });
 
@@ -71,7 +73,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }),
       remove: (id) => setItems((prev) => prev.filter((x) => x.id !== id)),
       setQty: (id, qty) =>
-        setItems((prev) => (qty <= 0 ? prev.filter((x) => x.id !== id) : prev.map((x) => (x.id === id ? { ...x, qty } : x)))),
+        setItems((prev) =>
+          qty <= 0
+            ? prev.filter((x) => x.id !== id)
+            : prev.map((x) => (x.id === id ? { ...x, qty } : x)),
+        ),
       clear: () => setItems([]),
       toggleWish: (id) =>
         setWishlist((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id])),

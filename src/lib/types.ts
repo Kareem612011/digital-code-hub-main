@@ -1,10 +1,5 @@
 export type Category =
-  | "Streaming"
-  | "Gaming"
-  | "Music"
-  | "Entertainment"
-  | "Productivity"
-  | "Gift Cards";
+  "Streaming" | "Gaming" | "Music" | "Entertainment" | "Productivity" | "Gift Cards";
 
 export interface Product {
   id: string;
@@ -57,4 +52,15 @@ export interface UserRow {
   orders: number;
   status: string;
   joined: string;
+}
+
+export interface OrderRow {
+  id: string | number;
+  productId: string;
+  productName: string;
+  qty: number;
+  price: number;
+  code: string;
+  status: string;
+  date: string;
 }

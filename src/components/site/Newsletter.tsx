@@ -10,8 +10,12 @@ export function Newsletter() {
       <div className="pointer-events-none absolute -bottom-20 -right-10 h-72 w-72 rounded-full bg-brand-accent/30 blur-3xl" />
       <div className="relative grid gap-8 md:grid-cols-2 md:items-center">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">Stay in the loop</div>
-          <h3 className="mt-2 text-3xl font-black md:text-4xl">Get flash deals before anyone else.</h3>
+          <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">
+            Stay in the loop
+          </div>
+          <h3 className="mt-2 text-3xl font-black md:text-4xl">
+            Get flash deals before anyone else.
+          </h3>
           <p className="mt-3 text-sm text-muted-foreground">
             Weekly drops with up to 70% off. No spam, unsubscribe anytime.
           </p>

@@ -14,7 +14,11 @@ export const Route = createFileRoute("/shop")({
   head: () => ({
     meta: [
       { title: "Shop — SubStore" },
-      { name: "description", content: "Browse premium subscription codes with filters for platform, region, duration and price." },
+      {
+        name: "description",
+        content:
+          "Browse premium subscription codes with filters for platform, region, duration and price.",
+      },
     ],
   }),
   validateSearch: (search: Record<string, unknown>): ShopSearch => {
@@ -88,14 +92,20 @@ function Shop() {
 
   const Select = ({ label, value, onChange, options }: any) => (
     <div>
-      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</label>
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </label>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value)}
         className="mt-1.5 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm outline-none focus:border-brand"
       >
         <option value="All">All</option>
-        {options.map((o: string) => <option key={o} value={o}>{o}</option>)}
+        {options.map((o: string) => (
+          <option key={o} value={o}>
+            {o}
+          </option>
+        ))}
       </select>
     </div>
   );
@@ -103,7 +113,9 @@ function Shop() {
   const Filters = (
     <div className="flex flex-col gap-4">
       <div>
-        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Category</label>
+        <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+          Category
+        </label>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {(["All", ...categories.map((c) => c.name)] as (Category | "All")[]).map((c) => (
             <button
@@ -138,7 +150,12 @@ function Shop() {
         />
       </div>
       <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" checked={inStock} onChange={(e) => setInStock(e.target.checked)} className="accent-[color:var(--brand)]" />
+        <input
+          type="checkbox"
+          checked={inStock}
+          onChange={(e) => setInStock(e.target.checked)}
+          className="accent-[color:var(--brand)]"
+        />
         In stock only
       </label>
     </div>
@@ -148,7 +165,9 @@ function Shop() {
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">Marketplace</div>
+          <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">
+            Marketplace
+          </div>
           <h1 className="mt-1 text-4xl font-black tracking-tight">Shop all subscriptions</h1>
           <p className="mt-2 text-sm text-muted-foreground">{filtered.length} products available</p>
         </div>
@@ -183,7 +202,9 @@ function Shop() {
             <div className="relative ml-auto h-full w-80 overflow-y-auto glass-strong p-5">
               <div className="mb-4 flex items-center justify-between">
                 <div className="font-bold">Filters</div>
-                <button onClick={() => setShowFilters(false)}><X className="h-5 w-5" /></button>
+                <button onClick={() => setShowFilters(false)}>
+                  <X className="h-5 w-5" />
+                </button>
               </div>
               {Filters}
             </div>
@@ -197,7 +218,9 @@ function Shop() {
             </div>
           ) : (
             <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
-              {filtered.map((p) => <ProductCard key={p.id} product={p} />)}
+              {filtered.map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
             </div>
           )}
         </div>

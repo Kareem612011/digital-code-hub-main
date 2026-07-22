@@ -52,14 +52,19 @@ function Home() {
                 <Flame className="h-5 w-5 text-white" />
               </div>
               <div>
-                <div className="text-xs font-semibold uppercase tracking-widest text-amber-300">Flash Deals</div>
+                <div className="text-xs font-semibold uppercase tracking-widest text-amber-300">
+                  Flash Deals
+                </div>
                 <div className="text-base font-bold">Limited-time drops · up to 70% off</div>
               </div>
             </div>
             <div className="flex items-center gap-4">
               <span className="text-xs text-muted-foreground">Ends in</span>
               <Countdown target={flash[0].flashEndsAt!} />
-              <Link to="/shop" className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">
+              <Link
+                to="/shop"
+                className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white"
+              >
                 Shop deals
               </Link>
             </div>
@@ -74,23 +79,43 @@ function Home() {
         linkTo="/shop"
       >
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {featured.map((p) => <ProductCard key={p.id} product={p} />)}
+          {featured.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
       </Section>
 
-      <Section eyebrow="Trending" title="Best sellers" desc="What everyone's buying right now." linkTo="/shop">
+      <Section
+        eyebrow="Trending"
+        title="Best sellers"
+        desc="What everyone's buying right now."
+        linkTo="/shop"
+      >
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {best.map((p) => <ProductCard key={p.id} product={p} />)}
+          {best.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
       </Section>
 
-      <Section eyebrow="Fresh drops" title="New arrivals" desc="Just added to the store." linkTo="/shop">
+      <Section
+        eyebrow="Fresh drops"
+        title="New arrivals"
+        desc="Just added to the store."
+        linkTo="/shop"
+      >
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-          {fresh.map((p) => <ProductCard key={p.id} product={p} />)}
+          {fresh.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
         </div>
       </Section>
 
-      <Section eyebrow="Browse" title="Popular categories" desc="Find exactly what you're looking for.">
+      <Section
+        eyebrow="Browse"
+        title="Popular categories"
+        desc="Find exactly what you're looking for."
+      >
         <CategoryGrid categories={categories} />
       </Section>
 

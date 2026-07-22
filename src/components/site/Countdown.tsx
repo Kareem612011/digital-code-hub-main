@@ -12,7 +12,9 @@ export function Countdown({ target }: { target: number }) {
   const s = Math.floor((diff % 60_000) / 1000);
   const cell = (n: number, l: string) => (
     <div className="flex flex-col items-center rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 min-w-[44px]">
-      <span className="text-sm font-bold tabular-nums text-foreground">{String(n).padStart(2, "0")}</span>
+      <span className="text-sm font-bold tabular-nums text-foreground">
+        {String(n).padStart(2, "0")}
+      </span>
       <span className="text-[9px] uppercase tracking-widest text-muted-foreground">{l}</span>
     </div>
   );

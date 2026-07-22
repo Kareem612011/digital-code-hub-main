@@ -32,12 +32,12 @@ export function Hero() {
           </div>
 
           <h1 className="mt-6 text-5xl font-black leading-[1.02] tracking-tight sm:text-6xl lg:text-7xl">
-            Premium subscriptions,{" "}
-            <span className="text-gradient">delivered in seconds.</span>
+            Premium subscriptions, <span className="text-gradient">delivered in seconds.</span>
           </h1>
 
           <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-            Netflix, Game Pass, Spotify, Disney+ and more. Save up to 60% on official codes with instant email delivery and full buyer protection.
+            Netflix, Game Pass, Spotify, Disney+ and more. Save up to 60% on official codes with
+            instant email delivery and full buyer protection.
           </p>
 
           <div className="mt-8 flex flex-wrap items-center gap-3">
@@ -57,9 +57,15 @@ export function Hero() {
           </div>
 
           <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-3 text-xs text-muted-foreground">
-            <div className="flex items-center gap-1.5"><Zap className="h-4 w-4 text-brand-accent" /> Instant digital delivery</div>
-            <div className="flex items-center gap-1.5"><Shield className="h-4 w-4 text-brand-accent" /> 100% buyer protection</div>
-            <div className="flex items-center gap-1.5"><Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.9 · 84k reviews</div>
+            <div className="flex items-center gap-1.5">
+              <Zap className="h-4 w-4 text-brand-accent" /> Instant digital delivery
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Shield className="h-4 w-4 text-brand-accent" /> 100% buyer protection
+            </div>
+            <div className="flex items-center gap-1.5">
+              <Star className="h-4 w-4 fill-amber-400 text-amber-400" /> 4.9 · 84k reviews
+            </div>
           </div>
         </div>
 

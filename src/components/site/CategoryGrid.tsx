@@ -3,7 +3,12 @@ import { Play, Gamepad2, Music, Clapperboard, Sparkles, Gift, type LucideIcon } 
 import type { CategoryRow } from "@/lib/types";
 
 const iconMap: Record<string, LucideIcon> = {
-  Play, Gamepad2, Music, Clapperboard, Sparkles, Gift,
+  Play,
+  Gamepad2,
+  Music,
+  Clapperboard,
+  Sparkles,
+  Gift,
 };
 
 export function CategoryGrid({ categories }: { categories: CategoryRow[] }) {
@@ -18,8 +23,12 @@ export function CategoryGrid({ categories }: { categories: CategoryRow[] }) {
             search={{ category: c.name } as never}
             className="group relative overflow-hidden rounded-3xl glass p-6 transition-all hover:-translate-y-1 hover:glow-brand"
           >
-            <div className={`absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br ${c.gradient} opacity-30 blur-2xl transition-opacity group-hover:opacity-60`} />
-            <div className={`relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${c.gradient} shadow-lg`}>
+            <div
+              className={`absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br ${c.gradient} opacity-30 blur-2xl transition-opacity group-hover:opacity-60`}
+            />
+            <div
+              className={`relative flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br ${c.gradient} shadow-lg`}
+            >
               <Icon className="h-6 w-6 text-white" />
             </div>
             <div className="relative mt-6">

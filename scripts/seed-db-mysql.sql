@@ -62,6 +62,21 @@ CREATE TABLE `users` (
   UNIQUE KEY `uq_users_email` (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+CREATE TABLE `orders` (
+  `id` INT NOT NULL AUTO_INCREMENT,
+  `user_email` VARCHAR(150) NOT NULL,
+  `user_name` VARCHAR(120) NOT NULL,
+  `product_id` VARCHAR(100) NOT NULL,
+  `product_name` VARCHAR(255) NOT NULL,
+  `qty` INT NOT NULL DEFAULT 1,
+  `price` DECIMAL(8,2) NOT NULL,
+  `code` VARCHAR(255) NOT NULL,
+  `status` VARCHAR(20) NOT NULL DEFAULT 'Delivered',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_email` (`user_email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 INSERT INTO `categories` (`name`, `description`, `icon`, `gradient`) VALUES
 ('Streaming', 'Netflix, Disney+, Max & more', 'Play', 'from-rose-500 to-pink-700'),
 ('Gaming', 'Xbox, PlayStation, Nintendo', 'Gamepad2', 'from-emerald-500 to-teal-700'),
@@ -100,11 +115,17 @@ INSERT INTO `products` (
 ('grammarly-premium', 'grammarly-premium', 'Grammarly Premium — 12 Months', 'Grammarly', 'from-emerald-400 to-green-800', 'Productivity', 'Multi-platform', 'Global', '12 Months', 59.99, 144.00, 4.7, 1240, 12800, 250, 1, 0, 0, 0, 0, NULL, 'Activate instantly and enjoy premium access. Digital code delivered to your inbox within seconds of purchase. Backed by our 24/7 support and buyer protection.', '["1 digital activation code","Step-by-step redemption guide","Instant email delivery","24/7 customer support"]', '["Open your provider account or create one","Navigate to Redeem Code / Gift Card","Enter the code we send to your inbox","Enjoy your subscription immediately"]', '[{"q":"How fast is delivery?","a":"Codes are delivered automatically within 30 seconds after payment."},{"q":"Is this region locked?","a":"Please check the region badge on the product. Most codes are global."},{"q":"Can I get a refund?","a":"Unused codes are eligible for refund within 24 hours of purchase."}]');
 
 INSERT INTO `users` (`name`, `email`, `plan`, `orders`, `status`, `joined_at`) VALUES
+('Jane Doe', 'user@example.com', 'Premium', 3, 'Active', '2024-01-15 00:00:00'),
 ('Ava Carter', 'ava.carter@example.com', 'Premium', 13, 'Active', '2025-01-08 00:00:00'),
 ('Liam Patel', 'liam.patel@example.com', 'Standard', 5, 'Active', '2025-02-12 00:00:00'),
 ('Sophia Nguyen', 'sophia.nguyen@example.com', 'Premium', 27, 'VIP', '2024-11-03 00:00:00'),
 ('Noah Williams', 'noah.williams@example.com', 'Starter', 2, 'Inactive', '2026-03-15 00:00:00'),
 ('Emma Johnson', 'emma.johnson@example.com', 'Premium', 18, 'Active', '2025-04-22 00:00:00');
+
+INSERT INTO `orders` (`user_email`, `user_name`, `product_id`, `product_name`, `qty`, `price`, `code`, `status`, `created_at`) VALUES
+('user@example.com', 'Jane Doe', 'netflix-premium-1m', 'Netflix Premium — 1 Month', 1, 12.99, 'NFLX-9K2M-XQ7T-PLM3', 'Delivered', '2026-07-01 00:00:00'),
+('user@example.com', 'Jane Doe', 'spotify-premium', 'Spotify Premium — 3 Months', 1, 19.99, 'SPTY-4Z1A-HB88-TR6D', 'Delivered', '2026-06-15 00:00:00'),
+('user@example.com', 'Jane Doe', 'xbox-gamepass-ultimate', 'Xbox Game Pass Ultimate — 3 Months', 1, 38.99, 'XGPU-77KL-99AV-QP11', 'Delivered', '2026-05-20 00:00:00');
 
 INSERT INTO `reviews` (`name`, `country`, `rating`, `text`) VALUES
 ('Alex M.', '🇺🇸', 5, 'Code arrived in 20 seconds. Cheaper than the official site and worked flawlessly on my Xbox.'),

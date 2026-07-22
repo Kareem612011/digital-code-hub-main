@@ -9,7 +9,8 @@ export function ProductCard({ product }: { product: Product }) {
   const wished = wishlist.includes(product.id);
   const price = Number(product.price) || 0;
   const originalPrice = Number(product.originalPrice) || 0;
-  const discount = originalPrice > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
+  const discount =
+    originalPrice > 0 ? Math.round(((originalPrice - price) / originalPrice) * 100) : 0;
 
   return (
     <div className="group relative flex flex-col overflow-hidden rounded-2xl glass transition-all duration-300 hover:-translate-y-1 hover:glow-brand">

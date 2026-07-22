@@ -94,13 +94,16 @@ export function saveProductOverrides(products: Product[]): void {
 
 export async function apiFetch<T>(path: string, params?: Record<string, QueryValue>): Promise<T> {
   // Only use localStorage overrides on the storefront (never on admin pages)
-  if (typeof window !== "undefined" && path === "/api/products" && !window.location.pathname.startsWith("/admin")) {
+  if (
+    typeof window !== "undefined" &&
+    path === "/api/products" &&
+    !window.location.pathname.startsWith("/admin")
+  ) {
     const storedProducts = getStoredProducts();
     if (storedProducts.length > 0) {
       return filterProducts(storedProducts, params) as T;
     }
   }
-
 
   const url = `${path}${buildQueryString(params)}`;
   let response = await fetch(url, {

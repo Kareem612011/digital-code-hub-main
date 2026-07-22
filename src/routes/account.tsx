@@ -3,7 +3,7 @@ import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { useCart } from "@/lib/cart";
 import { apiFetch } from "@/lib/api";
-import type { Product } from "@/lib/types";
+import type { Product, OrderRow } from "@/lib/types";
 import { BrandTile } from "@/components/site/BrandTile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,7 +50,6 @@ export const Route = createFileRoute("/account")({
 
 const menu = [
   { id: "orders", l: "Orders", i: Package },
-  { id: "downloads", l: "Downloads", i: Download },
   { id: "wishlist", l: "Wishlist", i: Heart },
   { id: "addresses", l: "Addresses", i: MapPin },
   { id: "payment", l: "Payment Methods", i: CreditCard },
@@ -90,6 +89,7 @@ interface UserSession {
   name: string;
   email: string;
   joined: string;
+  userId?: string | number;
 }
 
 interface Address {
@@ -188,14 +188,21 @@ function Account() {
   // ─── Auth Handlers ───────────────────────────────────────────────
   const syncUserToDb = async (name: string, email: string, password?: string) => {
     try {
-      await fetch("/api/users", {
+      const response = await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
+      if (response.ok) {
+        const data = await response.json().catch(() => null);
+        if (data?.id) {
+          return String(data.id);
+        }
+      }
     } catch (err) {
       console.error("Failed to sync user to database", err);
     }
+    return undefined;
   };
 
   const handleSignIn = async (e: React.FormEvent) => {
@@ -203,6 +210,16 @@ function Account() {
     setAuthError("");
     const cleanEmail = email.trim().toLowerCase();
     if (cleanEmail && password.length >= 6) {
+      const userId =
+        cleanEmail === "user@example.com" && password === "user123"
+          ? "1"
+          : await syncUserToDb(
+              cleanEmail
+                .split("@")[0]
+                .replace(/[^a-zA-Z]/g, " ")
+                .trim() || "Customer",
+              cleanEmail,
+            );
       const session: UserSession = {
         name:
           cleanEmail
@@ -211,10 +228,10 @@ function Account() {
             .trim() || "Customer",
         email: cleanEmail,
         joined: "2026",
+        userId,
       };
       saveToStorage(USER_AUTH_KEY, session);
       setUserSession(session);
-      await syncUserToDb(session.name, session.email);
     } else {
       setAuthError("Invalid email or password (min 6 characters)");
     }
@@ -240,9 +257,12 @@ function Account() {
       email: email.trim().toLowerCase(),
       joined: "2026",
     };
+    const userId = await syncUserToDb(session.name, session.email, password);
+    if (userId) {
+      session.userId = userId;
+    }
     saveToStorage(USER_AUTH_KEY, session);
     setUserSession(session);
-    await syncUserToDb(session.name, session.email, password);
   };
 
   const handleLogout = () => {
@@ -530,79 +550,7 @@ function Account() {
 
         <div className="rounded-2xl glass p-6">
           {/* ─── Orders ─── */}
-          {tab === "orders" && (
-            <div>
-              <h2 className="text-lg font-bold">Order history</h2>
-              <div className="mt-4 space-y-3">
-                {demoOrders.map((o) => {
-                  const p = products.find((x) => x.id === o.pid)!;
-                  return (
-                    <div
-                      key={o.id}
-                      className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4"
-                    >
-                      <div className="h-16 w-16 shrink-0">
-                        <BrandTile
-                          brand={p.brand}
-                          gradient={p.brandColor}
-                          size="sm"
-                          className="h-full w-full"
-                        />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="font-semibold">{p.name}</div>
-                        <div className="text-xs text-muted-foreground">
-                          {o.id} · {o.date}
-                        </div>
-                      </div>
-                      <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
-                        {o.status}
-                      </span>
-                      <div className="hidden rounded-lg bg-white/5 px-3 py-2 font-mono text-xs sm:block">
-                        {o.code}
-                      </div>
-                      <div className="flex gap-2">
-                        <button className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 cursor-pointer">
-                          <Download className="h-3.5 w-3.5" /> Code
-                        </button>
-                        <button className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 cursor-pointer">
-                          <FileText className="h-3.5 w-3.5" /> Invoice
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* ─── Downloads ─── */}
-          {tab === "downloads" && (
-            <div>
-              <h2 className="text-lg font-bold">Downloads</h2>
-              <p className="mt-2 text-sm text-muted-foreground">
-                Every code you've purchased, available anytime.
-              </p>
-              <div className="mt-4 space-y-2">
-                {demoOrders.map((o) => (
-                  <div
-                    key={o.id}
-                    className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 p-4"
-                  >
-                    <div>
-                      <div className="text-sm font-semibold">
-                        {products.find((p) => p.id === o.pid)?.name}
-                      </div>
-                      <div className="mt-1 font-mono text-xs text-muted-foreground">{o.code}</div>
-                    </div>
-                    <button className="inline-flex items-center gap-1 rounded-lg gradient-brand px-3 py-2 text-xs font-semibold text-white cursor-pointer">
-                      <Download className="h-3.5 w-3.5" /> Download
-                    </button>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
+          {tab === "orders" && <OrdersTab email={userSession.email} products={products} />}
 
           {/* ─── Wishlist ─── */}
           {tab === "wishlist" && (
@@ -1069,6 +1017,88 @@ function Account() {
           )}
         </div>
       </div>
+    </div>
+  );
+}
+
+function OrdersTab({ email, products }: { email: string; products: Product[] }) {
+  const { data: orders = [], isLoading } = useQuery<OrderRow[]>({
+    queryKey: ["orders", email],
+    queryFn: () => apiFetch<OrderRow[]>(`/api/orders?email=${encodeURIComponent(email)}`),
+    enabled: !!email,
+  });
+
+  if (isLoading) {
+    return (
+      <div>
+        <h2 className="text-lg font-bold">Order history</h2>
+        <div className="mt-4 space-y-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="h-24 animate-pulse rounded-2xl border border-white/10 bg-white/5"
+            />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div>
+      <h2 className="text-lg font-bold">Order history</h2>
+      {orders.length === 0 ? (
+        <div className="mt-10 rounded-2xl border border-dashed border-white/10 p-10 text-center text-sm text-muted-foreground">
+          No orders yet. Start shopping to see your order history here.
+        </div>
+      ) : (
+        <div className="mt-4 space-y-3">
+          {orders.map((o) => {
+            const p = products.find((x) => x.id === o.productId);
+            return (
+              <div
+                key={o.id}
+                className="flex flex-wrap items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-4"
+              >
+                <div className="h-16 w-16 shrink-0">
+                  {p ? (
+                    <BrandTile
+                      brand={p.brand}
+                      gradient={p.brandColor}
+                      size="sm"
+                      className="h-full w-full"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center rounded-lg bg-white/5 text-xs text-muted-foreground">
+                      N/A
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="font-semibold">{o.productName}</div>
+                  <div className="text-xs text-muted-foreground">
+                    #{o.id} · {o.date}
+                  </div>
+                </div>
+                <span className="rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-semibold text-emerald-400">
+                  {o.status}
+                </span>
+                <div className="hidden rounded-lg bg-white/5 px-3 py-2 font-mono text-xs sm:block">
+                  {o.code}
+                </div>
+                <div className="flex gap-2">
+                  <button className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 cursor-pointer">
+                    <Download className="h-3.5 w-3.5" /> Code
+                  </button>
+                  <button className="inline-flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-semibold hover:bg-white/10 cursor-pointer">
+                    <FileText className="h-3.5 w-3.5" /> Invoice
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

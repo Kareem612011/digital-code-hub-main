@@ -4,7 +4,9 @@ import { useCart } from "@/lib/cart";
 import { Check, CreditCard, Mail, Lock, ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/checkout")({
-  head: () => ({ meta: [{ title: "Checkout — SubStore" }, { name: "robots", content: "noindex" }] }),
+  head: () => ({
+    meta: [{ title: "Checkout — SubStore" }, { name: "robots", content: "noindex" }],
+  }),
   component: Checkout,
 });
 
@@ -14,12 +16,65 @@ function Checkout() {
   const { detailed, subtotal, clear } = useCart();
   const [step, setStep] = useState(0);
   const [pay, setPay] = useState("card");
+  const [placing, setPlacing] = useState(false);
   const tax = subtotal * 0.08;
   const total = subtotal + tax;
+
+  const getUserSession = () => {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = localStorage.getItem("substore-user-session");
+      return raw ? JSON.parse(raw) : null;
+    } catch {
+      return null;
+    }
+  };
 
   const next = () => {
     if (step === 2) clear();
     setStep((s) => Math.min(3, s + 1));
+  };
+
+  const handlePlaceOrder = async () => {
+    const session = getUserSession();
+    if (!session) {
+      setStep(3);
+      return;
+    }
+
+    setPlacing(true);
+    try {
+      const items = detailed.map(({ product, qty }) => ({
+        productId: product.id,
+        productName: product.name,
+        qty,
+        price: product.price,
+      }));
+
+      await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userEmail: session.email,
+          userName: session.name,
+          items,
+        }),
+      });
+    } catch {
+      console.error("Failed to create order");
+    } finally {
+      setPlacing(false);
+      clear();
+      setStep(3);
+    }
+  };
+
+  const handleNext = () => {
+    if (step === 2) {
+      handlePlaceOrder();
+    } else {
+      next();
+    }
   };
 
   return (
@@ -29,10 +84,16 @@ function Checkout() {
       <div className="mt-8 flex items-center gap-2 overflow-x-auto">
         {steps.map((s, i) => (
           <div key={s} className="flex items-center gap-2">
-            <div className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= step ? "gradient-brand text-white" : "bg-white/5 text-muted-foreground"}`}>
+            <div
+              className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${i <= step ? "gradient-brand text-white" : "bg-white/5 text-muted-foreground"}`}
+            >
               {i < step ? <Check className="h-4 w-4" /> : i + 1}
             </div>
-            <span className={`whitespace-nowrap text-sm ${i === step ? "font-semibold" : "text-muted-foreground"}`}>{s}</span>
+            <span
+              className={`whitespace-nowrap text-sm ${i === step ? "font-semibold" : "text-muted-foreground"}`}
+            >
+              {s}
+            </span>
             {i < steps.length - 1 && <div className="mx-2 h-px w-8 bg-white/10" />}
           </div>
         ))}
@@ -46,7 +107,12 @@ function Checkout() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <Field label="First name" placeholder="Jane" />
                 <Field label="Last name" placeholder="Doe" />
-                <Field label="Email" placeholder="you@example.com" icon={Mail} className="sm:col-span-2" />
+                <Field
+                  label="Email"
+                  placeholder="you@example.com"
+                  icon={Mail}
+                  className="sm:col-span-2"
+                />
                 <Field label="Country" placeholder="United States" />
                 <Field label="Phone (optional)" placeholder="+1 555 0000" />
               </div>
@@ -77,14 +143,20 @@ function Checkout() {
               </div>
               {pay === "card" && (
                 <div className="grid gap-4 sm:grid-cols-2">
-                  <Field label="Card number" placeholder="4242 4242 4242 4242" icon={CreditCard} className="sm:col-span-2" />
+                  <Field
+                    label="Card number"
+                    placeholder="4242 4242 4242 4242"
+                    icon={CreditCard}
+                    className="sm:col-span-2"
+                  />
                   <Field label="Expiry" placeholder="MM / YY" />
                   <Field label="CVC" placeholder="123" icon={Lock} />
                 </div>
               )}
               <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
                 <ShieldCheck className="h-4 w-4 text-brand-accent" />
-                Payments are encrypted and secured with 256-bit SSL. Accepted: Visa · Mastercard · PayPal · Apple Pay · Google Pay.
+                Payments are encrypted and secured with 256-bit SSL. Accepted: Visa · Mastercard ·
+                PayPal · Apple Pay · Google Pay.
               </div>
             </div>
           )}
@@ -96,8 +168,13 @@ function Checkout() {
               ) : (
                 <div className="divide-y divide-white/5">
                   {detailed.map(({ product, qty }) => (
-                    <div key={product.id} className="flex items-center justify-between py-3 text-sm">
-                      <span>{product.name} × {qty}</span>
+                    <div
+                      key={product.id}
+                      className="flex items-center justify-between py-3 text-sm"
+                    >
+                      <span>
+                        {product.name} × {qty}
+                      </span>
                       <span className="font-semibold">${(product.price * qty).toFixed(2)}</span>
                     </div>
                   ))}
@@ -113,9 +190,15 @@ function Checkout() {
               <h2 className="mt-4 text-2xl font-black">Order confirmed</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Your digital codes have been emailed. You can also find them in{" "}
-                <Link to="/account" className="text-brand-accent hover:underline">your account</Link>.
+                <Link to="/account" className="text-brand-accent hover:underline">
+                  your account
+                </Link>
+                .
               </p>
-              <Link to="/shop" className="mt-6 inline-block rounded-xl gradient-brand px-5 py-2.5 font-semibold text-white">
+              <Link
+                to="/shop"
+                className="mt-6 inline-block rounded-xl gradient-brand px-5 py-2.5 font-semibold text-white"
+              >
                 Continue shopping
               </Link>
             </div>
@@ -131,10 +214,11 @@ function Checkout() {
                 Back
               </button>
               <button
-                onClick={next}
-                className="rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-lg"
+                onClick={handleNext}
+                disabled={placing}
+                className="rounded-xl gradient-brand px-5 py-2.5 text-sm font-semibold text-white shadow-lg disabled:opacity-60"
               >
-                {step === 2 ? "Place order" : "Continue"}
+                {step === 2 ? (placing ? "Processing..." : "Place order") : "Continue"}
               </button>
             </div>
           )}
@@ -143,14 +227,28 @@ function Checkout() {
         <div className="h-fit rounded-2xl glass p-6">
           <h2 className="text-lg font-bold">Summary</h2>
           <div className="mt-4 space-y-2 text-sm">
-            <div className="flex justify-between"><span className="text-muted-foreground">Subtotal</span><span>${subtotal.toFixed(2)}</span></div>
-            <div className="flex justify-between"><span className="text-muted-foreground">Tax</span><span>${tax.toFixed(2)}</span></div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Subtotal</span>
+              <span>${subtotal.toFixed(2)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Tax</span>
+              <span>${tax.toFixed(2)}</span>
+            </div>
             <div className="my-2 border-t border-white/10" />
-            <div className="flex justify-between text-base font-bold"><span>Total</span><span>${total.toFixed(2)}</span></div>
+            <div className="flex justify-between text-base font-bold">
+              <span>Total</span>
+              <span>${total.toFixed(2)}</span>
+            </div>
           </div>
           <div className="mt-5 flex flex-wrap gap-2 text-[10px] text-muted-foreground">
             {["VISA", "MC", "PayPal", "Apple Pay", "G Pay"].map((b) => (
-              <span key={b} className="rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold">{b}</span>
+              <span
+                key={b}
+                className="rounded-md border border-white/10 bg-white/5 px-2 py-1 font-semibold"
+              >
+                {b}
+              </span>
             ))}
           </div>
         </div>
@@ -162,9 +260,13 @@ function Checkout() {
 function Field({ label, placeholder, icon: Icon, className = "" }: any) {
   return (
     <div className={className}>
-      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</label>
+      <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+        {label}
+      </label>
       <div className="relative mt-1.5">
-        {Icon && <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />}
+        {Icon && (
+          <Icon className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        )}
         <input
           placeholder={placeholder}
           className={`w-full rounded-xl border border-white/10 bg-white/5 py-2.5 pr-3 text-sm outline-none focus:border-brand ${Icon ? "pl-9" : "pl-3"}`}

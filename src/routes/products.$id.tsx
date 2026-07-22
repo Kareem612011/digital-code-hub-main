@@ -8,8 +8,17 @@ import { ProductCard } from "@/components/site/ProductCard";
 import { Section } from "@/components/site/Section";
 import type { Product } from "@/lib/types";
 import {
-  Zap, Shield, Globe2, Star, ShoppingCart, Heart, Check,
-  Truck, ChevronDown, Minus, Plus,
+  Zap,
+  Shield,
+  Globe2,
+  Star,
+  ShoppingCart,
+  Heart,
+  Check,
+  Truck,
+  ChevronDown,
+  Minus,
+  Plus,
 } from "lucide-react";
 
 export const Route = createFileRoute("/products/$id")({
@@ -36,7 +45,12 @@ export const Route = createFileRoute("/products/$id")({
   notFoundComponent: () => (
     <div className="mx-auto max-w-7xl px-4 py-24 text-center">
       <h1 className="text-3xl font-black">Product not found</h1>
-      <Link to="/shop" className="mt-6 inline-block rounded-xl gradient-brand px-5 py-2.5 font-semibold text-white">Back to shop</Link>
+      <Link
+        to="/shop"
+        className="mt-6 inline-block rounded-xl gradient-brand px-5 py-2.5 font-semibold text-white"
+      >
+        Back to shop
+      </Link>
     </div>
   ),
   component: ProductPage,
@@ -47,7 +61,9 @@ function ProductPage() {
   const { add, toggleWish, wishlist } = useCart();
   const [qty, setQty] = useState(1);
   const [openFaq, setOpenFaq] = useState<number | null>(0);
-  const discount = Math.round(((product.originalPrice - product.price) / product.originalPrice) * 100);
+  const discount = Math.round(
+    ((product.originalPrice - product.price) / product.originalPrice) * 100,
+  );
   const wished = wishlist.includes(product.id);
   const { data: relatedProducts = [] } = useQuery<Product[]>({
     queryKey: ["relatedProducts", product.category],
@@ -59,9 +75,13 @@ function ProductPage() {
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
       <nav className="mb-6 text-sm text-muted-foreground">
-        <Link to="/" className="hover:text-foreground">Home</Link>
+        <Link to="/" className="hover:text-foreground">
+          Home
+        </Link>
         <span className="mx-2">/</span>
-        <Link to="/shop" className="hover:text-foreground">Shop</Link>
+        <Link to="/shop" className="hover:text-foreground">
+          Shop
+        </Link>
         <span className="mx-2">/</span>
         <span className="text-foreground">{product.name}</span>
       </nav>
@@ -98,7 +118,9 @@ function ProductPage() {
                 <Check className="mr-1 inline h-3 w-3" /> In stock · {product.stock} left
               </span>
             ) : (
-              <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-400">Out of stock</span>
+              <span className="rounded-full bg-rose-500/15 px-2.5 py-1 text-xs font-medium text-rose-400">
+                Out of stock
+              </span>
             )}
             <span className="inline-flex items-center gap-1 rounded-full bg-white/5 px-2.5 py-1 text-xs text-muted-foreground">
               <Globe2 className="h-3 w-3" /> {product.region}
@@ -111,7 +133,9 @@ function ProductPage() {
             <div className="flex items-center gap-1">
               <Star className="h-4 w-4 fill-amber-400 text-amber-400" />
               <span className="font-semibold">{product.rating}</span>
-              <span className="text-muted-foreground">({product.reviews.toLocaleString()} reviews)</span>
+              <span className="text-muted-foreground">
+                ({product.reviews.toLocaleString()} reviews)
+              </span>
             </div>
             <span className="text-muted-foreground">·</span>
             <span className="text-muted-foreground">{product.sold.toLocaleString()} sold</span>
@@ -120,7 +144,9 @@ function ProductPage() {
           <div className="mt-6 rounded-2xl glass p-5">
             <div className="flex items-end gap-3">
               <span className="text-4xl font-black text-gradient">${product.price.toFixed(2)}</span>
-              <span className="text-base text-muted-foreground line-through">${product.originalPrice.toFixed(2)}</span>
+              <span className="text-base text-muted-foreground line-through">
+                ${product.originalPrice.toFixed(2)}
+              </span>
               {discount > 0 && (
                 <span className="rounded-full bg-rose-500/20 px-2 py-1 text-xs font-bold text-rose-300">
                   Save {discount}%
@@ -130,9 +156,13 @@ function ProductPage() {
 
             <div className="mt-5 flex items-center gap-3">
               <div className="inline-flex items-center rounded-xl border border-white/10 bg-white/5">
-                <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5"><Minus className="h-4 w-4" /></button>
+                <button onClick={() => setQty((q) => Math.max(1, q - 1))} className="p-2.5">
+                  <Minus className="h-4 w-4" />
+                </button>
                 <span className="w-10 text-center text-sm font-semibold">{qty}</span>
-                <button onClick={() => setQty((q) => q + 1)} className="p-2.5"><Plus className="h-4 w-4" /></button>
+                <button onClick={() => setQty((q) => q + 1)} className="p-2.5">
+                  <Plus className="h-4 w-4" />
+                </button>
               </div>
               <button
                 onClick={() => add(product.id, qty)}
@@ -163,7 +193,10 @@ function ProductPage() {
                 { i: Shield, l: "Protected" },
                 { i: Truck, l: "Email delivery" },
               ].map(({ i: Icon, l }) => (
-                <div key={l} className="flex items-center justify-center gap-1.5 rounded-lg bg-white/5 py-2">
+                <div
+                  key={l}
+                  className="flex items-center justify-center gap-1.5 rounded-lg bg-white/5 py-2"
+                >
                   <Icon className="h-3.5 w-3.5 text-brand-accent" /> {l}
                 </div>
               ))}
@@ -187,7 +220,10 @@ function ProductPage() {
           <Card title="What's included">
             <ul className="space-y-2 text-sm">
               {product.includes.map((x) => (
-                <li key={x} className="flex items-start gap-2"><Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />{x}</li>
+                <li key={x} className="flex items-start gap-2">
+                  <Check className="mt-0.5 h-4 w-4 shrink-0 text-emerald-400" />
+                  {x}
+                </li>
               ))}
             </ul>
           </Card>
@@ -195,7 +231,9 @@ function ProductPage() {
             <ol className="space-y-3 text-sm">
               {product.activation.map((x, i) => (
                 <li key={x} className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-white">{i + 1}</span>
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full gradient-brand text-xs font-bold text-white">
+                    {i + 1}
+                  </span>
                   <span>{x}</span>
                 </li>
               ))}
@@ -213,7 +251,9 @@ function ProductPage() {
                 >
                   <div className="flex items-center justify-between gap-2 text-sm font-semibold">
                     {f.q}
-                    <ChevronDown className={`h-4 w-4 shrink-0 transition ${openFaq === i ? "rotate-180" : ""}`} />
+                    <ChevronDown
+                      className={`h-4 w-4 shrink-0 transition ${openFaq === i ? "rotate-180" : ""}`}
+                    />
                   </div>
                   {openFaq === i && <p className="mt-2 text-sm text-muted-foreground">{f.a}</p>}
                 </button>
@@ -226,7 +266,9 @@ function ProductPage() {
       {related.length > 0 && (
         <Section title="You might also like">
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {related.map((p) => <ProductCard key={p.id} product={p} />)}
+            {related.map((p) => (
+              <ProductCard key={p.id} product={p} />
+            ))}
           </div>
         </Section>
       )}
@@ -237,7 +279,9 @@ function ProductPage() {
 function Info({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-white/10 bg-white/5 p-3">
-      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</div>
+      <div className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+        {label}
+      </div>
       <div className="mt-0.5 text-sm font-semibold">{value}</div>
     </div>
   );

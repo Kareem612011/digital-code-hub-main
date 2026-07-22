@@ -1,10 +1,5 @@
 export type Category =
-  | "Streaming"
-  | "Gaming"
-  | "Music"
-  | "Entertainment"
-  | "Productivity"
-  | "Gift Cards";
+  "Streaming" | "Gaming" | "Music" | "Entertainment" | "Productivity" | "Gift Cards";
 
 export interface Product {
   id: string;
@@ -37,7 +32,10 @@ export interface Product {
 const now = Date.now();
 const H = 3600_000;
 
-const base = (p: Partial<Product> & Pick<Product, "id" | "name" | "brand" | "brandColor" | "category" | "price" | "originalPrice">): Product => ({
+const base = (
+  p: Partial<Product> &
+    Pick<Product, "id" | "name" | "brand" | "brandColor" | "category" | "price" | "originalPrice">,
+): Product => ({
   slug: p.id,
   platform: "Multi-platform",
   region: "Global",
@@ -62,9 +60,18 @@ const base = (p: Partial<Product> & Pick<Product, "id" | "name" | "brand" | "bra
     "Enjoy your subscription immediately",
   ],
   faqs: [
-    { q: "How fast is delivery?", a: "Codes are delivered automatically within 30 seconds after payment." },
-    { q: "Is this region locked?", a: "Please check the region badge on the product. Most codes are global." },
-    { q: "Can I get a refund?", a: "Unused codes are eligible for refund within 24 hours of purchase." },
+    {
+      q: "How fast is delivery?",
+      a: "Codes are delivered automatically within 30 seconds after payment.",
+    },
+    {
+      q: "Is this region locked?",
+      a: "Please check the region badge on the product. Most codes are global.",
+    },
+    {
+      q: "Can I get a refund?",
+      a: "Unused codes are eligible for refund within 24 hours of purchase.",
+    },
   ],
   ...p,
 });
@@ -326,19 +333,69 @@ export const categories: {
   icon: string;
   gradient: string;
 }[] = [
-  { name: "Streaming", desc: "Netflix, Disney+, Max & more", icon: "Play", gradient: "from-rose-500 to-pink-700" },
-  { name: "Gaming", desc: "Xbox, PlayStation, Nintendo", icon: "Gamepad2", gradient: "from-emerald-500 to-teal-700" },
-  { name: "Music", desc: "Spotify, Apple Music, Deezer", icon: "Music", gradient: "from-fuchsia-500 to-purple-700" },
-  { name: "Entertainment", desc: "Crunchyroll, anime & more", icon: "Clapperboard", gradient: "from-amber-500 to-orange-700" },
-  { name: "Productivity", desc: "Microsoft, Adobe, Canva", icon: "Sparkles", gradient: "from-sky-500 to-indigo-700" },
-  { name: "Gift Cards", desc: "Steam, iTunes, Amazon", icon: "Gift", gradient: "from-violet-500 to-indigo-700" },
+  {
+    name: "Streaming",
+    desc: "Netflix, Disney+, Max & more",
+    icon: "Play",
+    gradient: "from-rose-500 to-pink-700",
+  },
+  {
+    name: "Gaming",
+    desc: "Xbox, PlayStation, Nintendo",
+    icon: "Gamepad2",
+    gradient: "from-emerald-500 to-teal-700",
+  },
+  {
+    name: "Music",
+    desc: "Spotify, Apple Music, Deezer",
+    icon: "Music",
+    gradient: "from-fuchsia-500 to-purple-700",
+  },
+  {
+    name: "Entertainment",
+    desc: "Crunchyroll, anime & more",
+    icon: "Clapperboard",
+    gradient: "from-amber-500 to-orange-700",
+  },
+  {
+    name: "Productivity",
+    desc: "Microsoft, Adobe, Canva",
+    icon: "Sparkles",
+    gradient: "from-sky-500 to-indigo-700",
+  },
+  {
+    name: "Gift Cards",
+    desc: "Steam, iTunes, Amazon",
+    icon: "Gift",
+    gradient: "from-violet-500 to-indigo-700",
+  },
 ];
 
 export const reviews = [
-  { name: "Alex M.", country: "🇺🇸", rating: 5, text: "Code arrived in 20 seconds. Cheaper than the official site and worked flawlessly on my Xbox." },
-  { name: "Sofia R.", country: "🇪🇸", rating: 5, text: "Bought a Netflix subscription for my parents. Instant, easy, no fuss. Will use again." },
-  { name: "Kenji T.", country: "🇯🇵", rating: 4, text: "Great prices on Game Pass. Clean checkout, would love more payment options." },
-  { name: "Linda P.", country: "🇩🇪", rating: 5, text: "Support answered in under two minutes. The activation guide was actually useful." },
+  {
+    name: "Alex M.",
+    country: "🇺🇸",
+    rating: 5,
+    text: "Code arrived in 20 seconds. Cheaper than the official site and worked flawlessly on my Xbox.",
+  },
+  {
+    name: "Sofia R.",
+    country: "🇪🇸",
+    rating: 5,
+    text: "Bought a Netflix subscription for my parents. Instant, easy, no fuss. Will use again.",
+  },
+  {
+    name: "Kenji T.",
+    country: "🇯🇵",
+    rating: 4,
+    text: "Great prices on Game Pass. Clean checkout, would love more payment options.",
+  },
+  {
+    name: "Linda P.",
+    country: "🇩🇪",
+    rating: 5,
+    text: "Support answered in under two minutes. The activation guide was actually useful.",
+  },
 ];
 
 export function findProduct(id: string) {

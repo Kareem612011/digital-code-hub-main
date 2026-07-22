@@ -1,5 +1,6 @@
 import { reviews } from "./lib/data";
 import pool from "./lib/mysql";
+// @ts-expect-error no types for bcrypt in this project
 import bcrypt from "bcrypt";
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
@@ -33,6 +34,18 @@ export async function handler(request: Request): Promise<Response> {
   if (pathname === "/api/admin") {
     if (request.method === "POST") {
       return handleAdminAuth(request);
+    }
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: jsonHeaders,
+    });
+  }
+  if (pathname === "/api/orders") {
+    if (request.method === "POST") {
+      return handleCreateOrder(request);
+    }
+    if (request.method === "GET") {
+      return handleGetOrders(request);
     }
     return new Response(JSON.stringify({ error: "Method not allowed" }), {
       status: 405,
@@ -499,7 +512,7 @@ async function handleAdminAuth(request: Request): Promise<Response> {
       "SELECT id, name, email, password FROM admins WHERE email = ? LIMIT 1",
       [email],
     );
-    const admin = Array.isArray(rows) ? rows[0] : null;
+    const admin = (Array.isArray(rows) ? rows[0] : null) as Record<string, unknown> | null;
 
     if (!admin || !(await bcrypt.compare(password, String(admin.password)))) {
       return new Response(JSON.stringify({ error: "Invalid admin credentials" }), {
@@ -601,5 +614,131 @@ function getOrderBy(sort: string): string {
       return "flashEndsAt DESC";
     default:
       return "sold DESC";
+  }
+}
+
+function generateOrderCode(): string {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let code = "";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  code += "-";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  code += "-";
+  for (let i = 0; i < 4; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+async function handleCreateOrder(request: Request): Promise<Response> {
+  try {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    const userEmail = String(body.userEmail ?? "").trim();
+    const userName = String(body.userName ?? "").trim();
+    const items = Array.isArray(body.items) ? body.items : [];
+
+    if (!userEmail || !userName || items.length === 0) {
+      return new Response(
+        JSON.stringify({ error: "Missing required fields: userEmail, userName, items" }),
+        {
+          status: 400,
+          headers: jsonHeaders,
+        },
+      );
+    }
+
+    const created: Record<string, unknown>[] = [];
+
+    for (const item of items) {
+      const productId = String(item.productId ?? "").trim();
+      const productName = String(item.productName ?? "").trim();
+      const qty = Number(item.qty ?? 1);
+      const price = Number(item.price ?? 0);
+
+      if (!productId || !productName || Number.isNaN(qty) || Number.isNaN(price)) {
+        continue;
+      }
+
+      const code = generateOrderCode();
+
+      const [result] = await pool.query(
+        `INSERT INTO orders (user_email, user_name, product_id, product_name, qty, price, code, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [userEmail, userName, productId, productName, qty, price, code, "Delivered"],
+      );
+
+      const insertId = (result as { insertId: number }).insertId;
+      const [rows] = await pool.query("SELECT * FROM orders WHERE id = ? LIMIT 1", [insertId]);
+      const row = (Array.isArray(rows) ? rows[0] : null) as Record<string, unknown> | null;
+
+      if (row) {
+        created.push({
+          id: row.id,
+          productId: row.product_id,
+          productName: row.product_name,
+          qty: Number(row.qty ?? 1),
+          price: Number(row.price ?? 0),
+          code: row.code,
+          status: row.status,
+          date: row.created_at,
+        });
+      }
+    }
+
+    return new Response(JSON.stringify(created), { status: 201, headers: jsonHeaders });
+  } catch (error) {
+    console.error("create order endpoint failed", error);
+    return new Response(JSON.stringify({ error: "Failed to create order" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
+}
+
+async function handleGetOrders(request: Request): Promise<Response> {
+  try {
+    const url = new URL(request.url);
+    const email = String(url.searchParams.get("email") ?? "").trim();
+
+    if (!email) {
+      return new Response(JSON.stringify({ error: "Missing email query parameter" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    const [rows] = await pool.query(
+      `SELECT id, product_id, product_name, qty, price, code, status, DATE_FORMAT(created_at, "%Y-%m-%d") AS date
+       FROM orders
+       WHERE user_email = ?
+       ORDER BY id DESC`,
+      [email],
+    );
+
+    const orders = Array.isArray(rows)
+      ? (rows as Record<string, unknown>[]).map((row) => ({
+          id: row.id,
+          productId: row.product_id,
+          productName: row.product_name,
+          qty: Number(row.qty ?? 1),
+          price: Number(row.price ?? 0),
+          code: row.code,
+          status: row.status,
+          date: row.date,
+        }))
+      : [];
+
+    return new Response(JSON.stringify(orders), { headers: jsonHeaders });
+  } catch (error) {
+    console.error("get orders endpoint failed", error);
+    return new Response(JSON.stringify({ error: "Failed to load orders" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
   }
 }

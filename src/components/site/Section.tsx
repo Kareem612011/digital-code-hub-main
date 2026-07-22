@@ -22,7 +22,9 @@ export function Section({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div className="max-w-2xl">
           {eyebrow && (
-            <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">{eyebrow}</div>
+            <div className="text-xs font-semibold uppercase tracking-widest text-brand-accent">
+              {eyebrow}
+            </div>
           )}
           <h2 className="mt-1 text-3xl font-black tracking-tight sm:text-4xl">{title}</h2>
           {desc && <p className="mt-2 text-sm text-muted-foreground">{desc}</p>}

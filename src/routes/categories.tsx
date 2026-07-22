@@ -13,7 +13,11 @@ export const Route = createFileRoute("/categories")({
   head: () => ({
     meta: [
       { title: "Categories — SubStore" },
-      { name: "description", content: "Explore all subscription categories: streaming, gaming, music, productivity and more." },
+      {
+        name: "description",
+        content:
+          "Explore all subscription categories: streaming, gaming, music, productivity and more.",
+      },
     ],
   }),
   component: CategoriesPage,

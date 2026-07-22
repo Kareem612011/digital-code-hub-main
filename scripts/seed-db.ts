@@ -63,7 +63,23 @@ db.exec(`
     password TEXT,
     joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
+
+  CREATE TABLE orders (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    user_email TEXT NOT NULL,
+    user_name TEXT NOT NULL,
+    product_id TEXT NOT NULL,
+    product_name TEXT NOT NULL,
+    qty INTEGER NOT NULL DEFAULT 1,
+    price REAL NOT NULL,
+    code TEXT NOT NULL,
+    status TEXT NOT NULL DEFAULT 'Delivered',
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+  );
 `);
+
+const idxUserEmail = db.prepare("CREATE INDEX IF NOT EXISTS idx_user_email ON orders(user_email)");
+idxUserEmail.run();
 
 const insertCategory = db.prepare(`
   INSERT INTO categories (name, description, icon, gradient)
@@ -84,6 +100,10 @@ const insertReview = db.prepare(`
 const insertUser = db.prepare(`
   INSERT INTO users (name, email, plan, orders, status, password, joined_at)
   VALUES (?, ?, ?, ?, ?, ?, ?)
+`);
+const insertOrder = db.prepare(`
+  INSERT INTO orders (user_email, user_name, product_id, product_name, qty, price, code, status, created_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
 `);
 
 for (const category of categories) {
@@ -169,7 +189,42 @@ insertUser.run(
   null,
   "2025-04-22 00:00:00",
 );
+insertUser.run("Jane Doe", "user@example.com", "Premium", 3, "Active", null, "2024-01-15 00:00:00");
+
+insertOrder.run(
+  "user@example.com",
+  "Jane Doe",
+  "netflix-premium-1m",
+  "Netflix Premium — 1 Month",
+  1,
+  12.99,
+  "NFLX-9K2M-XQ7T-PLM3",
+  "Delivered",
+  "2026-07-01 00:00:00",
+);
+insertOrder.run(
+  "user@example.com",
+  "Jane Doe",
+  "spotify-premium",
+  "Spotify Premium — 3 Months",
+  1,
+  19.99,
+  "SPTY-4Z1A-HB88-TR6D",
+  "Delivered",
+  "2026-06-15 00:00:00",
+);
+insertOrder.run(
+  "user@example.com",
+  "Jane Doe",
+  "xbox-gamepass-ultimate",
+  "Xbox Game Pass Ultimate — 3 Months",
+  1,
+  38.99,
+  "XGPU-77KL-99AV-QP11",
+  "Delivered",
+  "2026-05-20 00:00:00",
+);
 
 console.log(
-  `Created ${dbPath} with ${products.length} products, ${categories.length} categories, ${reviews.length} reviews, and 5 users.`,
+  `Created ${dbPath} with ${products.length} products, ${categories.length} categories, ${reviews.length} reviews, and ${5 + 1} users.`,
 );
