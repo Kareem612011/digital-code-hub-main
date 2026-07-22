@@ -24,9 +24,24 @@ export async function handler(request: Request): Promise<Response> {
     return new Response(JSON.stringify(rows), { headers: jsonHeaders });
   }
   if (pathname === "/api/users") {
+    if (request.method === "POST") {
+      return handleCreateUser(request);
+    }
     return handleUsers();
   }
-  return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: jsonHeaders });
+  if (pathname === "/api/admin/auth") {
+    if (request.method === "POST") {
+      return handleAdminAuth(request);
+    }
+    return new Response(JSON.stringify({ error: "Method not allowed" }), {
+      status: 405,
+      headers: jsonHeaders,
+    });
+  }
+  return new Response(JSON.stringify({ error: "Not found" }), {
+    status: 404,
+    headers: jsonHeaders,
+  });
 }
 
 function castProduct(row: Record<string, unknown>): Record<string, unknown> {
@@ -46,7 +61,8 @@ function castProduct(row: Record<string, unknown>): Record<string, unknown> {
     reviews: Number(row.reviews ?? 0),
     sold: Number(row.sold ?? 0),
     stock: Number(row.stock ?? 0),
-    flashEndsAt: row.flashEndsAt === null || row.flashEndsAt === undefined ? null : Number(row.flashEndsAt),
+    flashEndsAt:
+      row.flashEndsAt === null || row.flashEndsAt === undefined ? null : Number(row.flashEndsAt),
   };
 }
 
@@ -70,14 +86,22 @@ function toBoolean(value: unknown): boolean {
 
 async function handleProductById(id: string): Promise<Response> {
   try {
-    const [rows] = await pool.query("SELECT * FROM products WHERE id = ? OR slug = ? LIMIT 1", [id, id]);
+    const [rows] = await pool.query("SELECT * FROM products WHERE id = ? OR slug = ? LIMIT 1", [
+      id,
+      id,
+    ]);
     const row = Array.isArray(rows) ? rows[0] : null;
 
     if (!row) {
-      return new Response(JSON.stringify({ error: "Not found" }), { status: 404, headers: jsonHeaders });
+      return new Response(JSON.stringify({ error: "Not found" }), {
+        status: 404,
+        headers: jsonHeaders,
+      });
     }
 
-    return new Response(JSON.stringify(castProduct(row as Record<string, unknown>)), { headers: jsonHeaders });
+    return new Response(JSON.stringify(castProduct(row as Record<string, unknown>)), {
+      headers: jsonHeaders,
+    });
   } catch (error) {
     console.error("product detail endpoint failed", error);
     return new Response(JSON.stringify({ error: "Failed to load product" }), {
@@ -105,7 +129,14 @@ async function handleProductMutations(request: Request): Promise<Response> {
       const originalPrice = Number(body.originalPrice);
       const stock = Number(body.stock);
 
-      if (!name || !slug || !category || Number.isNaN(price) || Number.isNaN(originalPrice) || Number.isNaN(stock)) {
+      if (
+        !name ||
+        !slug ||
+        !category ||
+        Number.isNaN(price) ||
+        Number.isNaN(originalPrice) ||
+        Number.isNaN(stock)
+      ) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
           status: 400,
           headers: jsonHeaders,
@@ -135,7 +166,7 @@ async function handleProductMutations(request: Request): Promise<Response> {
           JSON.stringify(Array.isArray(body.includes) ? body.includes : []),
           JSON.stringify(Array.isArray(body.activation) ? body.activation : []),
           JSON.stringify(Array.isArray(body.faqs) ? body.faqs : []),
-        ]
+        ],
       );
 
       const insertId = (result as { insertId: number }).insertId;
@@ -172,7 +203,13 @@ async function handleProductMutations(request: Request): Promise<Response> {
       const originalPrice = Number(body.originalPrice);
       const stock = Number(body.stock);
 
-      if (!name || !category || Number.isNaN(price) || Number.isNaN(originalPrice) || Number.isNaN(stock)) {
+      if (
+        !name ||
+        !category ||
+        Number.isNaN(price) ||
+        Number.isNaN(originalPrice) ||
+        Number.isNaN(stock)
+      ) {
         return new Response(JSON.stringify({ error: "Missing required fields" }), {
           status: 400,
           headers: jsonHeaders,
@@ -202,7 +239,7 @@ async function handleProductMutations(request: Request): Promise<Response> {
           JSON.stringify(Array.isArray(body.activation) ? body.activation : []),
           JSON.stringify(Array.isArray(body.faqs) ? body.faqs : []),
           id,
-        ]
+        ],
       );
 
       const [rows] = await pool.query("SELECT * FROM products WHERE id = ? LIMIT 1", [id]);
@@ -215,7 +252,9 @@ async function handleProductMutations(request: Request): Promise<Response> {
         });
       }
 
-      return new Response(JSON.stringify(castProduct(row as Record<string, unknown>)), { headers: jsonHeaders });
+      return new Response(JSON.stringify(castProduct(row as Record<string, unknown>)), {
+        headers: jsonHeaders,
+      });
     }
 
     if (request.method === "DELETE") {
@@ -355,6 +394,125 @@ async function handleUsers(): Promise<Response> {
   }
 }
 
+async function handleCreateUser(request: Request): Promise<Response> {
+  try {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    const name = String(body.name ?? "").trim();
+    const email = String(body.email ?? "").trim();
+
+    if (!name || !email) {
+      return new Response(JSON.stringify({ error: "Missing required fields: name and email" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    await pool.query(
+      `INSERT INTO users (name, email, plan, orders, status) VALUES (?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE name = VALUES(name)`,
+      [name, email, "Starter", 0, "Active"],
+    );
+
+    const [rows] = await pool.query(
+      "SELECT id, name, email, plan, orders, status, DATE_FORMAT(joined_at, '%Y-%m-%d') AS joined FROM users WHERE email = ? LIMIT 1",
+      [email],
+    );
+    const row = Array.isArray(rows) ? rows[0] : null;
+
+    if (!row) {
+      return new Response(JSON.stringify({ error: "Failed to load user" }), {
+        status: 500,
+        headers: jsonHeaders,
+      });
+    }
+
+    return new Response(JSON.stringify(row), { headers: jsonHeaders });
+  } catch (error) {
+    console.error("create user endpoint failed", error);
+    return new Response(JSON.stringify({ error: "Failed to create user" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
+}
+
+async function ensureAdminsTable(): Promise<void> {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS admins (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password VARCHAR(255) NOT NULL,
+      name VARCHAR(255) NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+}
+
+async function seedDefaultAdmin(): Promise<void> {
+  const [rows] = await pool.query("SELECT COUNT(*) AS count FROM admins");
+  const count = (rows as { count: number }[])[0]?.count ?? 0;
+  if (count === 0) {
+    await pool.query("INSERT INTO admins (email, password, name) VALUES (?, ?, ?)", [
+      "admin@substore.com",
+      "admin123",
+      "Admin",
+    ]);
+  }
+}
+
+async function handleAdminAuth(request: Request): Promise<Response> {
+  await ensureAdminsTable();
+  await seedDefaultAdmin();
+
+  try {
+    const body = await request.json().catch(() => null);
+    if (!body || typeof body !== "object") {
+      return new Response(JSON.stringify({ error: "Invalid request body" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    const email = String(body.email ?? "").trim();
+    const password = String(body.password ?? "").trim();
+
+    if (!email || !password) {
+      return new Response(JSON.stringify({ error: "Email and password are required" }), {
+        status: 400,
+        headers: jsonHeaders,
+      });
+    }
+
+    const [rows] = await pool.query(
+      "SELECT id, name, email FROM admins WHERE email = ? AND password = ? LIMIT 1",
+      [email, password],
+    );
+    const admin = Array.isArray(rows) ? rows[0] : null;
+
+    if (!admin) {
+      return new Response(JSON.stringify({ error: "Invalid admin credentials" }), {
+        status: 401,
+        headers: jsonHeaders,
+      });
+    }
+
+    return new Response(JSON.stringify({ ok: true, admin }), { headers: jsonHeaders });
+  } catch (error) {
+    console.error("admin auth endpoint failed", error);
+    return new Response(JSON.stringify({ error: "Authentication failed" }), {
+      status: 500,
+      headers: jsonHeaders,
+    });
+  }
+}
+
 async function handleProducts(url: URL): Promise<Response> {
   const p = url.searchParams;
   const id = p.get("id");
@@ -406,7 +564,10 @@ async function handleProducts(url: URL): Promise<Response> {
     const whereClause = filters.length ? ` WHERE ${filters.join(" AND ")}` : "";
     const orderBy = getOrderBy(sort);
 
-    const [rows] = await pool.query(`SELECT * FROM products${whereClause} ORDER BY ${orderBy}`, params);
+    const [rows] = await pool.query(
+      `SELECT * FROM products${whereClause} ORDER BY ${orderBy}`,
+      params,
+    );
 
     const list = Array.isArray(rows)
       ? (rows as Record<string, unknown>[]).map((row) => castProduct(row))

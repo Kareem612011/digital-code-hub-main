@@ -187,7 +187,19 @@ function Account() {
   const [settingsSaved, setSettingsSaved] = useState(false);
 
   // ─── Auth Handlers ───────────────────────────────────────────────
-  const handleSignIn = (e: React.FormEvent) => {
+  const syncUserToDb = async (name: string, email: string) => {
+    try {
+      await fetch("/api/users", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name, email }),
+      });
+    } catch (err) {
+      console.error("Failed to sync user to database", err);
+    }
+  };
+
+  const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
     const cleanEmail = email.trim().toLowerCase();
@@ -195,6 +207,7 @@ function Account() {
       const session: UserSession = { name: "Jane Doe", email: "user@example.com", joined: "2024" };
       saveToStorage(USER_AUTH_KEY, session);
       setUserSession(session);
+      await syncUserToDb(session.name, session.email);
     } else if (cleanEmail && password.length >= 6) {
       const session: UserSession = {
         name:
@@ -207,12 +220,13 @@ function Account() {
       };
       saveToStorage(USER_AUTH_KEY, session);
       setUserSession(session);
+      await syncUserToDb(session.name, session.email);
     } else {
       setAuthError("Invalid email or password (min 6 characters)");
     }
   };
 
-  const handleRegister = (e: React.FormEvent) => {
+  const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
     if (!name.trim()) {
@@ -234,6 +248,7 @@ function Account() {
     };
     saveToStorage(USER_AUTH_KEY, session);
     setUserSession(session);
+    await syncUserToDb(session.name, session.email);
   };
 
   const handleLogout = () => {

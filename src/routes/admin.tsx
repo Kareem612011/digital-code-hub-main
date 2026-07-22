@@ -3,9 +3,33 @@ import { useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { apiFetch, saveProductOverrides } from "@/lib/api";
 import type { Category, CategoryRow, Product, UserRow } from "@/lib/types";
-import { DollarSign, ShoppingBag, Users, Package, TrendingUp, Pencil, Trash2, ShieldCheck, Lock, Mail, Eye, EyeOff, LogOut, KeyRound, AlertCircle } from "lucide-react";
+import {
+  DollarSign,
+  ShoppingBag,
+  Users,
+  Package,
+  TrendingUp,
+  Pencil,
+  Trash2,
+  ShieldCheck,
+  Lock,
+  Mail,
+  Eye,
+  EyeOff,
+  LogOut,
+  KeyRound,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
@@ -144,7 +168,12 @@ function Admin() {
   const handleEditCategory = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (!editingCategoryName || !newCategoryName.trim() || !newCategoryDescription.trim() || !newCategoryIcon.trim()) {
+    if (
+      !editingCategoryName ||
+      !newCategoryName.trim() ||
+      !newCategoryDescription.trim() ||
+      !newCategoryIcon.trim()
+    ) {
       return;
     }
 
@@ -208,11 +237,19 @@ function Admin() {
     const parsedPrice = Number.parseFloat(newProductPrice);
     const parsedStock = Number.parseInt(newProductStock, 10);
 
-    if (!editingProductId || !newProductName.trim() || Number.isNaN(parsedPrice) || Number.isNaN(parsedStock)) {
+    if (
+      !editingProductId ||
+      !newProductName.trim() ||
+      Number.isNaN(parsedPrice) ||
+      Number.isNaN(parsedStock)
+    ) {
       return;
     }
 
-    const slug = newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = newProductName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
     let existing: Product;
     try {
@@ -258,7 +295,7 @@ function Admin() {
     const updatedProduct = (await response.json().catch(() => null)) as Product | null;
     if (updatedProduct) {
       queryClient.setQueryData<Product[]>(["products"], (old = []) =>
-        old.map((p) => (p.id === updatedProduct.id ? updatedProduct : p))
+        old.map((p) => (p.id === updatedProduct.id ? updatedProduct : p)),
       );
     }
 
@@ -294,12 +331,14 @@ function Admin() {
     const parsedPrice = Number.parseFloat(newProductPrice);
     const parsedStock = Number.parseInt(newProductStock, 10);
 
-
     if (!newProductName.trim() || Number.isNaN(parsedPrice) || Number.isNaN(parsedStock)) {
       return;
     }
 
-    const slug = newProductName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
+    const slug = newProductName
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/(^-|-$)/g, "");
 
     const response = await fetch("/api/products", {
       method: "POST",
@@ -343,16 +382,30 @@ function Admin() {
     setIsAddProductOpen(false);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setAuthError("");
 
     const cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail === "admin@substore.com" && password === "admin123") {
+
+    try {
+      const response = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: cleanEmail, password }),
+      });
+
+      const data = await response.json().catch(() => null);
+
+      if (!response.ok || !data?.ok) {
+        setAuthError(data?.error ?? "Invalid admin credentials");
+        return;
+      }
+
       window.localStorage.setItem(ADMIN_AUTH_KEY, "true");
       setIsAuthenticated(true);
-    } else {
-      setAuthError("Invalid admin credentials. Please use admin@substore.com / admin123");
+    } catch (err) {
+      setAuthError("Unable to reach authentication service");
     }
   };
 
@@ -382,7 +435,9 @@ function Admin() {
               <ShieldCheck className="h-7 w-7 text-white" />
             </div>
             <h1 className="mt-4 text-2xl font-black tracking-tight">Admin Portal</h1>
-            <p className="mt-1.5 text-xs text-muted-foreground">Sign in to manage catalog, orders, and users</p>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              Sign in to manage catalog, orders, and users
+            </p>
           </div>
 
           <div className="mt-6 rounded-2xl border border-brand/20 bg-brand/10 p-4 text-xs">
@@ -399,8 +454,12 @@ function Admin() {
               </button>
             </div>
             <div className="mt-2 space-y-1 text-muted-foreground font-mono text-[11px]">
-              <div>Email: <span className="text-foreground">admin@substore.com</span></div>
-              <div>Password: <span className="text-foreground">admin123</span></div>
+              <div>
+                Email: <span className="text-foreground">admin@substore.com</span>
+              </div>
+              <div>
+                Password: <span className="text-foreground">admin123</span>
+              </div>
             </div>
           </div>
 
@@ -452,7 +511,10 @@ function Admin() {
               </div>
             </div>
 
-            <Button type="submit" className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white shadow-lg cursor-pointer">
+            <Button
+              type="submit"
+              className="w-full rounded-xl gradient-brand py-2.5 text-sm font-semibold text-white shadow-lg cursor-pointer"
+            >
               Sign In to Dashboard
             </Button>
           </form>
@@ -486,7 +548,9 @@ function Admin() {
                 key={t}
                 onClick={() => setTab(t)}
                 className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition cursor-pointer ${
-                  tab === t ? "gradient-brand text-white shadow-lg" : "border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
+                  tab === t
+                    ? "gradient-brand text-white shadow-lg"
+                    : "border border-white/10 bg-white/5 text-muted-foreground hover:text-foreground"
                 }`}
               >
                 {t}
@@ -511,13 +575,20 @@ function Admin() {
             {stats.map((s) => (
               <div key={s.l} className="rounded-2xl glass p-5">
                 <div className="flex items-center justify-between">
-                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{s.l}</div>
+                  <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    {s.l}
+                  </div>
                   <div className="flex h-9 w-9 items-center justify-center rounded-xl gradient-brand">
                     <s.i className="h-4 w-4 text-white" />
                   </div>
                 </div>
                 <div className="mt-4 text-2xl font-black">{s.v}</div>
-                {s.d && <div className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-400"><TrendingUp className="h-3 w-3" />{s.d}</div>}
+                {s.d && (
+                  <div className="mt-1 inline-flex items-center gap-1 text-xs text-emerald-400">
+                    <TrendingUp className="h-3 w-3" />
+                    {s.d}
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -535,7 +606,9 @@ function Admin() {
                       className="w-full rounded-t-lg gradient-brand transition-all"
                       style={{ height: `${v}%` }}
                     />
-                    <div className="text-[10px] text-muted-foreground">{["J","F","M","A","M","J","J","A","S","O","N","D"][i]}</div>
+                    <div className="text-[10px] text-muted-foreground">
+                      {["J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D"][i]}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -547,7 +620,9 @@ function Admin() {
                 {products.slice(0, 5).map((p) => (
                   <div key={p.id} className="flex items-center justify-between gap-2 text-sm">
                     <span className="line-clamp-1">{p.name}</span>
-                    <span className="shrink-0 font-semibold text-brand-accent">${(p.price * p.sold / 1000).toFixed(0)}k</span>
+                    <span className="shrink-0 font-semibold text-brand-accent">
+                      ${((p.price * p.sold) / 1000).toFixed(0)}k
+                    </span>
                   </div>
                 ))}
               </div>
@@ -562,17 +637,27 @@ function Admin() {
             <h2 className="text-lg font-bold">Products ({visibleProducts.length})</h2>
             <Dialog open={isAddProductOpen} onOpenChange={setIsAddProductOpen}>
               <DialogTrigger asChild>
-                <Button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">+ Add product</Button>
+                <Button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">
+                  + Add product
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>Add a product</DialogTitle>
-                  <DialogDescription>Create a new product record for the admin catalog.</DialogDescription>
+                  <DialogDescription>
+                    Create a new product record for the admin catalog.
+                  </DialogDescription>
                 </DialogHeader>
                 <form className="space-y-4" onSubmit={handleAddProduct}>
                   <div className="space-y-2">
                     <Label htmlFor="product-name">Product name</Label>
-                    <Input id="product-name" value={newProductName} onChange={(event) => setNewProductName(event.target.value)} placeholder="Enter product name" required />
+                    <Input
+                      id="product-name"
+                      value={newProductName}
+                      onChange={(event) => setNewProductName(event.target.value)}
+                      placeholder="Enter product name"
+                      required
+                    />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -599,13 +684,28 @@ function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="product-price">Price</Label>
-                      <Input id="product-price" type="number" min="0" step="0.01" value={newProductPrice} onChange={(event) => setNewProductPrice(event.target.value)} required />
+                      <Input
+                        id="product-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newProductPrice}
+                        onChange={(event) => setNewProductPrice(event.target.value)}
+                        required
+                      />
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="product-stock">Stock</Label>
-                      <Input id="product-stock" type="number" min="0" value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} required />
+                      <Input
+                        id="product-stock"
+                        type="number"
+                        min="0"
+                        value={newProductStock}
+                        onChange={(event) => setNewProductStock(event.target.value)}
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="product-color">Brand / Accent Color</Label>
@@ -629,7 +729,13 @@ function Admin() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsAddProductOpen(false)}>Cancel</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsAddProductOpen(false)}
+                    >
+                      Cancel
+                    </Button>
                     <Button type="submit">Save product</Button>
                   </DialogFooter>
                 </form>
@@ -644,7 +750,13 @@ function Admin() {
                 <form className="space-y-4" onSubmit={handleEditProduct}>
                   <div className="space-y-2">
                     <Label htmlFor="edit-product-name">Product name</Label>
-                    <Input id="edit-product-name" value={newProductName} onChange={(event) => setNewProductName(event.target.value)} placeholder="Enter product name" required />
+                    <Input
+                      id="edit-product-name"
+                      value={newProductName}
+                      onChange={(event) => setNewProductName(event.target.value)}
+                      placeholder="Enter product name"
+                      required
+                    />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
@@ -671,13 +783,28 @@ function Admin() {
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-product-price">Price</Label>
-                      <Input id="edit-product-price" type="number" min="0" step="0.01" value={newProductPrice} onChange={(event) => setNewProductPrice(event.target.value)} required />
+                      <Input
+                        id="edit-product-price"
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={newProductPrice}
+                        onChange={(event) => setNewProductPrice(event.target.value)}
+                        required
+                      />
                     </div>
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="edit-product-stock">Stock</Label>
-                      <Input id="edit-product-stock" type="number" min="0" value={newProductStock} onChange={(event) => setNewProductStock(event.target.value)} required />
+                      <Input
+                        id="edit-product-stock"
+                        type="number"
+                        min="0"
+                        value={newProductStock}
+                        onChange={(event) => setNewProductStock(event.target.value)}
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-product-color">Brand / Accent Color</Label>
@@ -701,7 +828,13 @@ function Admin() {
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsEditProductOpen(false)}>Cancel</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setIsEditProductOpen(false)}
+                    >
+                      Cancel
+                    </Button>
                     <Button type="submit">Update product</Button>
                   </DialogFooter>
                 </form>
@@ -725,7 +858,10 @@ function Admin() {
                   <tr key={p.id}>
                     <td className="py-3 font-medium">
                       <div className="flex items-center gap-2">
-                        <span className="h-3 w-3 rounded-full shrink-0 shadow-sm border border-white/20" style={{ backgroundColor: p.brandColor || "#6d5dfc" }} />
+                        <span
+                          className="h-3 w-3 rounded-full shrink-0 shadow-sm border border-white/20"
+                          style={{ backgroundColor: p.brandColor || "#6d5dfc" }}
+                        />
                         <span>{p.name}</span>
                       </div>
                     </td>
@@ -735,10 +871,20 @@ function Admin() {
                     <td className="text-muted-foreground">{p.sold.toLocaleString()}</td>
                     <td>
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => handleOpenEditProduct(p)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditProduct(p)}
+                        >
                           <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                         </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteProduct(p)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteProduct(p)}
+                        >
                           <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
                         </Button>
                       </div>
@@ -755,7 +901,9 @@ function Admin() {
         <div className="mt-8 rounded-2xl glass p-6">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold">Users ({users.length})</h2>
-            <button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">+ Add user</button>
+            <button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">
+              + Add user
+            </button>
           </div>
           <div className="mt-4 overflow-x-auto">
             <table className="w-full text-sm">
@@ -799,7 +947,9 @@ function Admin() {
             <h2 className="text-lg font-bold">Categories ({categoriesRows.length})</h2>
             <Dialog open={isAddCategoryOpen} onOpenChange={setIsAddCategoryOpen}>
               <DialogTrigger asChild>
-                <Button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">+ Add category</Button>
+                <Button className="rounded-xl gradient-brand px-4 py-2 text-xs font-semibold text-white">
+                  + Add category
+                </Button>
               </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
@@ -809,24 +959,57 @@ function Admin() {
                 <form className="space-y-4" onSubmit={handleAddCategory}>
                   <div className="space-y-2">
                     <Label htmlFor="category-name">Category name</Label>
-                    <Input id="category-name" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Enter category name" required />
+                    <Input
+                      id="category-name"
+                      value={newCategoryName}
+                      onChange={(event) => setNewCategoryName(event.target.value)}
+                      placeholder="Enter category name"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="category-description">Description</Label>
-                    <Input id="category-description" value={newCategoryDescription} onChange={(event) => setNewCategoryDescription(event.target.value)} placeholder="Enter description" required />
+                    <Input
+                      id="category-description"
+                      value={newCategoryDescription}
+                      onChange={(event) => setNewCategoryDescription(event.target.value)}
+                      placeholder="Enter description"
+                      required
+                    />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="category-icon">Icon</Label>
-                      <Input id="category-icon" value={newCategoryIcon} onChange={(event) => setNewCategoryIcon(event.target.value)} placeholder="Icon name" required />
+                      <Input
+                        id="category-icon"
+                        value={newCategoryIcon}
+                        onChange={(event) => setNewCategoryIcon(event.target.value)}
+                        placeholder="Icon name"
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="category-gradient">Gradient</Label>
-                      <Input id="category-gradient" value={newCategoryGradient} onChange={(event) => setNewCategoryGradient(event.target.value)} placeholder="e.g. from-sky-500 to-indigo-700" required />
+                      <Input
+                        id="category-gradient"
+                        value={newCategoryGradient}
+                        onChange={(event) => setNewCategoryGradient(event.target.value)}
+                        placeholder="e.g. from-sky-500 to-indigo-700"
+                        required
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => { resetCategoryForm(); setIsAddCategoryOpen(false); }}>Cancel</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        resetCategoryForm();
+                        setIsAddCategoryOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
                     <Button type="submit">Save category</Button>
                   </DialogFooter>
                 </form>
@@ -841,24 +1024,57 @@ function Admin() {
                 <form className="space-y-4" onSubmit={handleEditCategory}>
                   <div className="space-y-2">
                     <Label htmlFor="edit-category-name">Category name</Label>
-                    <Input id="edit-category-name" value={newCategoryName} onChange={(event) => setNewCategoryName(event.target.value)} placeholder="Enter category name" required />
+                    <Input
+                      id="edit-category-name"
+                      value={newCategoryName}
+                      onChange={(event) => setNewCategoryName(event.target.value)}
+                      placeholder="Enter category name"
+                      required
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="edit-category-description">Description</Label>
-                    <Input id="edit-category-description" value={newCategoryDescription} onChange={(event) => setNewCategoryDescription(event.target.value)} placeholder="Enter description" required />
+                    <Input
+                      id="edit-category-description"
+                      value={newCategoryDescription}
+                      onChange={(event) => setNewCategoryDescription(event.target.value)}
+                      placeholder="Enter description"
+                      required
+                    />
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
                     <div className="space-y-2">
                       <Label htmlFor="edit-category-icon">Icon</Label>
-                      <Input id="edit-category-icon" value={newCategoryIcon} onChange={(event) => setNewCategoryIcon(event.target.value)} placeholder="Icon name" required />
+                      <Input
+                        id="edit-category-icon"
+                        value={newCategoryIcon}
+                        onChange={(event) => setNewCategoryIcon(event.target.value)}
+                        placeholder="Icon name"
+                        required
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="edit-category-gradient">Gradient</Label>
-                      <Input id="edit-category-gradient" value={newCategoryGradient} onChange={(event) => setNewCategoryGradient(event.target.value)} placeholder="e.g. from-sky-500 to-indigo-700" required />
+                      <Input
+                        id="edit-category-gradient"
+                        value={newCategoryGradient}
+                        onChange={(event) => setNewCategoryGradient(event.target.value)}
+                        placeholder="e.g. from-sky-500 to-indigo-700"
+                        required
+                      />
                     </div>
                   </div>
                   <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => { resetCategoryForm(); setIsEditCategoryOpen(false); }}>Cancel</Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => {
+                        resetCategoryForm();
+                        setIsEditCategoryOpen(false);
+                      }}
+                    >
+                      Cancel
+                    </Button>
                     <Button type="submit">Update category</Button>
                   </DialogFooter>
                 </form>
@@ -885,10 +1101,20 @@ function Admin() {
                     <td className="text-muted-foreground">{category.gradient}</td>
                     <td>
                       <div className="flex justify-end gap-2">
-                        <Button type="button" variant="outline" size="sm" onClick={() => handleOpenEditCategory(category)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleOpenEditCategory(category)}
+                        >
                           <Pencil className="mr-1 h-3.5 w-3.5" /> Edit
                         </Button>
-                        <Button type="button" variant="outline" size="sm" onClick={() => handleDeleteCategory(category)}>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleDeleteCategory(category)}
+                        >
                           <Trash2 className="mr-1 h-3.5 w-3.5" /> Delete
                         </Button>
                       </div>
