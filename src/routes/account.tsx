@@ -23,7 +23,6 @@ import {
   Eye,
   EyeOff,
   AlertCircle,
-  KeyRound,
   UserPlus,
   LogIn,
   Plus,
@@ -187,12 +186,12 @@ function Account() {
   const [settingsSaved, setSettingsSaved] = useState(false);
 
   // ─── Auth Handlers ───────────────────────────────────────────────
-  const syncUserToDb = async (name: string, email: string) => {
+  const syncUserToDb = async (name: string, email: string, password?: string) => {
     try {
       await fetch("/api/users", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email }),
+        body: JSON.stringify({ name, email, password }),
       });
     } catch (err) {
       console.error("Failed to sync user to database", err);
@@ -203,12 +202,7 @@ function Account() {
     e.preventDefault();
     setAuthError("");
     const cleanEmail = email.trim().toLowerCase();
-    if (cleanEmail === "user@example.com" && password === "user123") {
-      const session: UserSession = { name: "Jane Doe", email: "user@example.com", joined: "2024" };
-      saveToStorage(USER_AUTH_KEY, session);
-      setUserSession(session);
-      await syncUserToDb(session.name, session.email);
-    } else if (cleanEmail && password.length >= 6) {
+    if (cleanEmail && password.length >= 6) {
       const session: UserSession = {
         name:
           cleanEmail
@@ -248,7 +242,7 @@ function Account() {
     };
     saveToStorage(USER_AUTH_KEY, session);
     setUserSession(session);
-    await syncUserToDb(session.name, session.email);
+    await syncUserToDb(session.name, session.email, password);
   };
 
   const handleLogout = () => {
@@ -258,13 +252,6 @@ function Account() {
     setPassword("");
     setName("");
     setConfirmPassword("");
-    setAuthError("");
-  };
-
-  const fillDemoCredentials = () => {
-    setAuthMode("signin");
-    setEmail("user@example.com");
-    setPassword("user123");
     setAuthError("");
   };
 
@@ -408,31 +395,6 @@ function Account() {
             </button>
           </div>
 
-          {authMode === "signin" && (
-            <div className="mt-4 rounded-2xl border border-brand/20 bg-brand/10 p-3.5 text-xs">
-              <div className="flex items-center justify-between font-semibold text-brand-accent">
-                <span className="flex items-center gap-1.5">
-                  <KeyRound className="h-4 w-4" /> Demo Credentials
-                </span>
-                <button
-                  type="button"
-                  onClick={fillDemoCredentials}
-                  className="underline hover:text-white transition-colors cursor-pointer"
-                >
-                  Auto-fill
-                </button>
-              </div>
-              <div className="mt-1.5 space-y-0.5 text-muted-foreground font-mono text-[11px]">
-                <div>
-                  Email: <span className="text-foreground">user@example.com</span>
-                </div>
-                <div>
-                  Password: <span className="text-foreground">user123</span>
-                </div>
-              </div>
-            </div>
-          )}
-
           <form
             onSubmit={authMode === "signin" ? handleSignIn : handleRegister}
             className="mt-5 space-y-4"
@@ -469,7 +431,7 @@ function Account() {
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  placeholder="user@example.com"
+                  placeholder="you@example.com"
                   className="pl-9"
                   required
                 />

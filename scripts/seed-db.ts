@@ -60,6 +60,7 @@ db.exec(`
     plan TEXT NOT NULL DEFAULT 'Starter',
     orders INTEGER NOT NULL DEFAULT 0,
     status TEXT NOT NULL DEFAULT 'Active',
+    password TEXT,
     joined_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
   );
 `);
@@ -81,8 +82,8 @@ const insertReview = db.prepare(`
   VALUES (?, ?, ?, ?)
 `);
 const insertUser = db.prepare(`
-  INSERT INTO users (name, email, plan, orders, status, joined_at)
-  VALUES (?, ?, ?, ?, ?, ?)
+  INSERT INTO users (name, email, plan, orders, status, password, joined_at)
+  VALUES (?, ?, ?, ?, ?, ?, ?)
 `);
 
 for (const category of categories) {
@@ -123,10 +124,52 @@ for (const review of reviews) {
   insertReview.run(review.name, review.country, review.rating, review.text);
 }
 
-insertUser.run("Ava Carter", "ava.carter@example.com", "Premium", 13, "Active", "2025-01-08 00:00:00");
-insertUser.run("Liam Patel", "liam.patel@example.com", "Standard", 5, "Active", "2025-02-12 00:00:00");
-insertUser.run("Sophia Nguyen", "sophia.nguyen@example.com", "Premium", 27, "VIP", "2024-11-03 00:00:00");
-insertUser.run("Noah Williams", "noah.williams@example.com", "Starter", 2, "Inactive", "2026-03-15 00:00:00");
-insertUser.run("Emma Johnson", "emma.johnson@example.com", "Premium", 18, "Active", "2025-04-22 00:00:00");
+insertUser.run(
+  "Ava Carter",
+  "ava.carter@example.com",
+  "Premium",
+  13,
+  "Active",
+  null,
+  "2025-01-08 00:00:00",
+);
+insertUser.run(
+  "Liam Patel",
+  "liam.patel@example.com",
+  "Standard",
+  5,
+  "Active",
+  null,
+  "2025-02-12 00:00:00",
+);
+insertUser.run(
+  "Sophia Nguyen",
+  "sophia.nguyen@example.com",
+  "Premium",
+  27,
+  "VIP",
+  null,
+  "2024-11-03 00:00:00",
+);
+insertUser.run(
+  "Noah Williams",
+  "noah.williams@example.com",
+  "Starter",
+  2,
+  "Inactive",
+  null,
+  "2026-03-15 00:00:00",
+);
+insertUser.run(
+  "Emma Johnson",
+  "emma.johnson@example.com",
+  "Premium",
+  18,
+  "Active",
+  null,
+  "2025-04-22 00:00:00",
+);
 
-console.log(`Created ${dbPath} with ${products.length} products, ${categories.length} categories, ${reviews.length} reviews, and 5 users.`);
+console.log(
+  `Created ${dbPath} with ${products.length} products, ${categories.length} categories, ${reviews.length} reviews, and 5 users.`,
+);

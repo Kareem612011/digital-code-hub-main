@@ -1,5 +1,6 @@
 import { reviews } from "./lib/data";
 import pool from "./lib/mysql";
+import bcrypt from "bcrypt";
 
 const jsonHeaders = { "content-type": "application/json; charset=utf-8" };
 
@@ -29,7 +30,7 @@ export async function handler(request: Request): Promise<Response> {
     }
     return handleUsers();
   }
-  if (pathname === "/api/admin/auth") {
+  if (pathname === "/api/admin") {
     if (request.method === "POST") {
       return handleAdminAuth(request);
     }
@@ -406,6 +407,7 @@ async function handleCreateUser(request: Request): Promise<Response> {
 
     const name = String(body.name ?? "").trim();
     const email = String(body.email ?? "").trim();
+    const rawPassword = String(body.password ?? "");
 
     if (!name || !email) {
       return new Response(JSON.stringify({ error: "Missing required fields: name and email" }), {
@@ -414,10 +416,12 @@ async function handleCreateUser(request: Request): Promise<Response> {
       });
     }
 
+    const password = rawPassword ? await bcrypt.hash(rawPassword, 10) : null;
+
     await pool.query(
-      `INSERT INTO users (name, email, plan, orders, status) VALUES (?, ?, ?, ?, ?)
-       ON DUPLICATE KEY UPDATE name = VALUES(name)`,
-      [name, email, "Starter", 0, "Active"],
+      `INSERT INTO users (name, email, plan, orders, status, password) VALUES (?, ?, ?, ?, ?, ?)
+       ON DUPLICATE KEY UPDATE name = VALUES(name), password = COALESCE(VALUES(password), password)`,
+      [name, email, "Starter", 0, "Active", password],
     );
 
     const [rows] = await pool.query(
@@ -459,9 +463,10 @@ async function seedDefaultAdmin(): Promise<void> {
   const [rows] = await pool.query("SELECT COUNT(*) AS count FROM admins");
   const count = (rows as { count: number }[])[0]?.count ?? 0;
   if (count === 0) {
+    const hash = await bcrypt.hash("admin123", 10);
     await pool.query("INSERT INTO admins (email, password, name) VALUES (?, ?, ?)", [
       "admin@substore.com",
-      "admin123",
+      hash,
       "Admin",
     ]);
   }
@@ -491,19 +496,20 @@ async function handleAdminAuth(request: Request): Promise<Response> {
     }
 
     const [rows] = await pool.query(
-      "SELECT id, name, email FROM admins WHERE email = ? AND password = ? LIMIT 1",
-      [email, password],
+      "SELECT id, name, email, password FROM admins WHERE email = ? LIMIT 1",
+      [email],
     );
     const admin = Array.isArray(rows) ? rows[0] : null;
 
-    if (!admin) {
+    if (!admin || !(await bcrypt.compare(password, String(admin.password)))) {
       return new Response(JSON.stringify({ error: "Invalid admin credentials" }), {
         status: 401,
         headers: jsonHeaders,
       });
     }
 
-    return new Response(JSON.stringify({ ok: true, admin }), { headers: jsonHeaders });
+    const { password: _password, ...safeAdmin } = admin as Record<string, unknown>;
+    return new Response(JSON.stringify({ ok: true, admin: safeAdmin }), { headers: jsonHeaders });
   } catch (error) {
     console.error("admin auth endpoint failed", error);
     return new Response(JSON.stringify({ error: "Authentication failed" }), {

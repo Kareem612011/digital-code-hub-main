@@ -43,12 +43,17 @@ const tabs = ["Overview", "Products", "Categories", "Coupons", "Orders", "Users"
 const chart = [30, 45, 42, 60, 58, 72, 68, 84, 79, 92, 88, 100];
 
 const ADMIN_AUTH_KEY = "substore-admin-session";
+const ADMIN_EMAIL_KEY = "substore-admin-email";
 
 function Admin() {
   const queryClient = useQueryClient();
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
     return window.localStorage.getItem(ADMIN_AUTH_KEY) === "true";
+  });
+  const [adminEmail, setAdminEmail] = useState<string>(() => {
+    if (typeof window === "undefined") return "";
+    return window.localStorage.getItem(ADMIN_EMAIL_KEY) ?? "";
   });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -389,7 +394,7 @@ function Admin() {
     const cleanEmail = email.trim().toLowerCase();
 
     try {
-      const response = await fetch("/api/admin/auth", {
+      const response = await fetch("/api/admin", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: cleanEmail, password }),
@@ -402,7 +407,10 @@ function Admin() {
         return;
       }
 
+      const loggedInEmail = String(data.admin?.email ?? cleanEmail);
       window.localStorage.setItem(ADMIN_AUTH_KEY, "true");
+      window.localStorage.setItem(ADMIN_EMAIL_KEY, loggedInEmail);
+      setAdminEmail(loggedInEmail);
       setIsAuthenticated(true);
     } catch (err) {
       setAuthError("Unable to reach authentication service");
@@ -411,7 +419,9 @@ function Admin() {
 
   const handleLogout = () => {
     window.localStorage.removeItem(ADMIN_AUTH_KEY);
+    window.localStorage.removeItem(ADMIN_EMAIL_KEY);
     setIsAuthenticated(false);
+    setAdminEmail("");
     setEmail("");
     setPassword("");
     setAuthError("");
@@ -537,7 +547,7 @@ function Admin() {
                 <ShieldCheck className="h-3 w-3" /> Super Admin
               </span>
             </div>
-            <p className="text-xs text-muted-foreground">Logged in as admin@substore.com</p>
+            <p className="text-xs text-muted-foreground">Logged in as {adminEmail || "admin"}</p>
           </div>
         </div>
 
